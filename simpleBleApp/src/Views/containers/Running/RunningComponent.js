@@ -4,9 +4,9 @@ import { connect } from 'react-redux';
 import { View, Switch, Text, TextInput, StyleSheet } from 'react-native';
 import { Buffer } from 'buffer';
 
-import * as ble from '../../Redux/reducers/BleActions.js';
-import ButtonView from '../components/assets/ButtonView.js';
-import Style from '../Style.js';
+import * as ble from '../../../Redux/reducers/BleActions.js';
+import ButtonView from '../../components/assets/ButtonView.js';
+import Style from '../../Style.js';
 
 class RunningComponent extends Component {
 

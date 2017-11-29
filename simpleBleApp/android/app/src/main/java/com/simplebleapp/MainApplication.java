@@ -3,6 +3,7 @@ package com.simplebleapp;
 import android.app.Application;
 
 import com.facebook.react.ReactApplication;
+import io.realm.react.RealmReactPackage;
 import com.horcrux.svg.SvgPackage;
 import com.burnweb.rnpermissions.RNPermissionsPackage;
 import com.polidea.reactnativeble.BlePackage;
@@ -26,6 +27,7 @@ public class MainApplication extends Application implements ReactApplication {
     protected List<ReactPackage> getPackages() {
       return Arrays.<ReactPackage>asList(
           new MainReactPackage(),
+            new RealmReactPackage(),
             new SvgPackage(),
             new RNPermissionsPackage(),
             new BlePackage()

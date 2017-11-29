@@ -2,7 +2,7 @@
  
  import React, { Component } from 'react'
  import { View, Text, StyleSheet } from 'react-native'
- import Style from '../Style'
+ import Style from '../../Style'
 
  export default class ProfileComponent extends Component {
   render() {

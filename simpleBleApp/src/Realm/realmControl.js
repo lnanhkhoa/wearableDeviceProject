@@ -21,26 +21,23 @@ const MeasurementSchema = {
     heartRate:  {type: 'int'},
     spO2:       {type: 'int'},
     bloodPressure:  {type: 'int'},
-    updatedAt:    {type: 'date'}
+    updatedAt:    {type: 'date', indexed: true}
   }
 };
 
 
 const realm = new Realm({schema: [PersonSchema, MeasurementSchema]});
-// Realm.open({schema: [MeasurementSchema, PersonSchema]})
-// .then(realm => {
-  realm.write(() => {
-    let Person = realm.objects('Person');
-    realm.delete(Person);
-    let measure = realm.objects('Measurement');
-    realm.delete(measure);
-    while(true){
-      let arrayData = Utils.createRandomData();
-      realm.create('Measurement',objectRealm.createNewDataSensor(arrayData));
-      if(arrayData[6] > new Date(2018,0,0)) break;
-    }
-  })
-// })
+  // realm.write(() => {
+  //   let Person = realm.objects('Person');
+  //   realm.delete(Person);
+  //   let measure = realm.objects('Measurement');
+  //   realm.delete(measure);
+  //   while(true){
+  //     let arrayData = Utils.createRandomData();
+  //     realm.create('Measurement',objectRealm.createNewDataSensor(arrayData));
+  //     if(arrayData[6] > new Date(2018,0,0)) break;
+  //   }
+  // })
 
 
 let realmMeasureService = {
@@ -50,7 +47,16 @@ let realmMeasureService = {
     return realmAllObject.slice(0, realmAllObject.length);
 
   },
-
+  findWithLimit: function(limit){
+    let sortBy = [['updatedAt', true]];
+    let realmAllObject = realm.objects('Measurement').sorted(sortBy);
+    return realmAllObject.slice(0, limit);    
+  },
+  query: function(stringQuery){
+    let sortBy = [['updatedAt', true]];
+    let realmAllObject = realm.objects('Measurement').filtered(stringQuery).sorted(sortBy);
+    return realmAllObject.slice(0,realmAllObject.length);
+  },
   save: function(todo) {
     if (realm.objects('Measurement').filtered("updatedAt = '" + todo.updatedAt + "'").length) return;
 

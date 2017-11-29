@@ -38,6 +38,9 @@
 		ADBDB9381DFEBF1600ED6528 /* libRCTBlob.a in Frameworks */ = {isa = PBXBuildFile; fileRef = ADBDB9271DFEBF0700ED6528 /* libRCTBlob.a */; };
 		6ECB963E03D5426ABAE53AB4 /* libBleClient.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 749EF5FBA8CE438183B441DE /* libBleClient.a */; };
 		1456C74517CB433499B8589F /* libRNSVG.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E8CA67FD7C4C96BE1E9FB7 /* libRNSVG.a */; };
+		109FB6264455423EA5AF376C /* libRealmReact.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4E503D7C3DE043789FDBD959 /* libRealmReact.a */; };
+		F0A64E91D897416BB92A5771 /* libc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 831B5CAB8A8D4892A00C6BE5 /* libc++.tbd */; };
+		D069F7B2A13F49D9BC628C48 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 093AC5F350F145118657311B /* libz.tbd */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -269,6 +272,10 @@
 		749EF5FBA8CE438183B441DE /* libBleClient.a */ = {isa = PBXFileReference; name = "libBleClient.a"; path = "libBleClient.a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = archive.ar; explicitFileType = undefined; includeInIndex = 0; };
 		D83A4E007E4246CF9EB5BA35 /* RNSVG.xcodeproj */ = {isa = PBXFileReference; name = "RNSVG.xcodeproj"; path = "../node_modules/react-native-svg/ios/RNSVG.xcodeproj"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = wrapper.pb-project; explicitFileType = undefined; includeInIndex = 0; };
 		D3E8CA67FD7C4C96BE1E9FB7 /* libRNSVG.a */ = {isa = PBXFileReference; name = "libRNSVG.a"; path = "libRNSVG.a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = archive.ar; explicitFileType = undefined; includeInIndex = 0; };
+		7C2BA61EC1944BA6B9E3E963 /* RealmReact.xcodeproj */ = {isa = PBXFileReference; name = "RealmReact.xcodeproj"; path = "../node_modules/realm/react-native/ios/RealmReact.xcodeproj"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = wrapper.pb-project; explicitFileType = undefined; includeInIndex = 0; };
+		4E503D7C3DE043789FDBD959 /* libRealmReact.a */ = {isa = PBXFileReference; name = "libRealmReact.a"; path = "libRealmReact.a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = archive.ar; explicitFileType = undefined; includeInIndex = 0; };
+		831B5CAB8A8D4892A00C6BE5 /* libc++.tbd */ = {isa = PBXFileReference; name = "libc++.tbd"; path = "usr/lib/libc++.tbd"; sourceTree = SDKROOT; fileEncoding = undefined; lastKnownFileType = sourcecode.text-based-dylib-definition; explicitFileType = undefined; includeInIndex = 0; };
+		093AC5F350F145118657311B /* libz.tbd */ = {isa = PBXFileReference; name = "libz.tbd"; path = "usr/lib/libz.tbd"; sourceTree = SDKROOT; fileEncoding = undefined; lastKnownFileType = sourcecode.text-based-dylib-definition; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -299,6 +306,9 @@
 				139FDEF61B0652A700C62182 /* libRCTWebSocket.a in Frameworks */,
 				6ECB963E03D5426ABAE53AB4 /* libBleClient.a in Frameworks */,
 				1456C74517CB433499B8589F /* libRNSVG.a in Frameworks */,
+				109FB6264455423EA5AF376C /* libRealmReact.a in Frameworks */,
+				F0A64E91D897416BB92A5771 /* libc++.tbd in Frameworks */,
+				D069F7B2A13F49D9BC628C48 /* libz.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -469,6 +479,7 @@
 				139FDEE61B06529A00C62182 /* RCTWebSocket.xcodeproj */,
 				0142565702B642BA9434515F /* BleClient.xcodeproj */,
 				D83A4E007E4246CF9EB5BA35 /* RNSVG.xcodeproj */,
+				7C2BA61EC1944BA6B9E3E963 /* RealmReact.xcodeproj */,
 			);
 			name = Libraries;
 			sourceTree = "<group>";
@@ -489,6 +500,7 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				00E356EF1AD99517003FC87E /* simpleBleAppTests */,
 				83CBBA001A601CBA00E9B192 /* Products */,
+				640A645E4F2D4F2FA43BB33E /* Frameworks */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -513,6 +525,16 @@
 			);
 			name = Products;
 			sourceTree = "<group>";
+		};
+		640A645E4F2D4F2FA43BB33E /* Frameworks */ = {
+			isa = "PBXGroup";
+			children = (
+				831B5CAB8A8D4892A00C6BE5 /* libc++.tbd */,
+				093AC5F350F145118657311B /* libz.tbd */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+			path = "";
 		};
 /* End PBXGroup section */
 
@@ -1018,11 +1040,13 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
+					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)\..\node_modules\react-native-ble-plx\ios/**",
 					"$(SRCROOT)\..\node_modules\react-native-svg\ios/**",
+					"$(SRCROOT)\..\node_modules\realm\src/**",
 				);
 			};
 			name = Debug;
@@ -1045,11 +1069,13 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
+					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)\..\node_modules\react-native-ble-plx\ios/**",
 					"$(SRCROOT)\..\node_modules\react-native-svg\ios/**",
+					"$(SRCROOT)\..\node_modules\realm\src/**",
 				);
 			};
 			name = Release;
@@ -1073,6 +1099,7 @@
 					"$(inherited)",
 					"$(SRCROOT)\..\node_modules\react-native-ble-plx\ios/**",
 					"$(SRCROOT)\..\node_modules\react-native-svg\ios/**",
+					"$(SRCROOT)\..\node_modules\realm\src/**",
 				);
 			};
 			name = Debug;
@@ -1095,6 +1122,7 @@
 					"$(inherited)",
 					"$(SRCROOT)\..\node_modules\react-native-ble-plx\ios/**",
 					"$(SRCROOT)\..\node_modules\react-native-svg\ios/**",
+					"$(SRCROOT)\..\node_modules\realm\src/**",
 				);
 			};
 			name = Release;
@@ -1126,11 +1154,13 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
+					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)\..\node_modules\react-native-ble-plx\ios/**",
 					"$(SRCROOT)\..\node_modules\react-native-svg\ios/**",
+					"$(SRCROOT)\..\node_modules\realm\src/**",
 				);
 			};
 			name = Debug;
@@ -1162,11 +1192,13 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
+					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)\..\node_modules\react-native-ble-plx\ios/**",
 					"$(SRCROOT)\..\node_modules\react-native-svg\ios/**",
+					"$(SRCROOT)\..\node_modules\realm\src/**",
 				);
 			};
 			name = Release;
@@ -1193,6 +1225,7 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
+					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 			};
 			name = Debug;
@@ -1217,6 +1250,7 @@
 				TVOS_DEPLOYMENT_TARGET = 10.1;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
+					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);

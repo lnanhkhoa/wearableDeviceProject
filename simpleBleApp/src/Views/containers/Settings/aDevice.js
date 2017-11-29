@@ -6,9 +6,9 @@
 import { connect } from 'react-redux'
 import { Actions } from 'react-native-router-flux'
 
-import * as SceneConst from '../../Redux/reducers/Const.js'
-import * as ble from '../../Redux/reducers/BleActions.js'
-import Style from '../Style.js'
+import * as SceneConst from '../../../Redux/reducers/Const.js'
+import * as ble from '../../../Redux/reducers/BleActions.js'
+import Style from '../../Style.js'
 
 class ADeviceComponent extends Component {
  	

@@ -5,17 +5,17 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react
 import { connect } from 'react-redux'
 import { Actions } from 'react-native-router-flux'
 
-import ImmutableListView from '../components/assets/ImmutableListView.js'
-import * as ble from '../../Redux/reducers/BleActions.js'
-import ButtonView from '../components/assets/ButtonView.js'
-import * as SceneConst from '../../Redux/reducers/Const.js'
-import Style from '../Style'
+import * as ble from '../../../Redux/reducers/BleActions.js'
+import * as SceneConst from '../../../Redux/reducers/Const.js'
+import ImmutableListView from '../../components/assets/ImmutableListView.js'
+import ButtonView from '../../components/assets/ButtonView.js'
+import Style from '../../Style'
 
 var dataFlatlistRender = [
   {key: 'My device', title: 'My device', header: true }, 
   {key: 'Device', title: 'Device', iconLeft: '', details:'not connected', expand: 'DEVICES_SCENE', last: true },
   {key: 'Setting goal', title: 'Setting goal', header: true }, 
-  {key: 'Sport goal', title: 'Sport goal', iconLeft: '', details:'9000', expand: ''},
+  {key: 'Sport goal', title: 'Sport goal', iconLeft: '', details:'9000', expand: 'info1'},
   {key: 'Sleep goal', title: 'Sleep goal', iconLeft: '', details:'8.0h', expand: '', last: true },
   {key: 'More', title: 'More', header: true }, 
   {key: 'Unit setting', title: 'Unit setting', iconLeft: '', details:'Metric', expand: ''},
