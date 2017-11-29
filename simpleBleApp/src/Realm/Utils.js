@@ -31,3 +31,21 @@ let Utils = {
 }
 
 module.exports = Utils;
+
+
+// class SampleData{
+//   randomElement(x, max){
+//     return ( 
+//       { x: x, y : Math.random()*max | 0}
+//     );
+//   }
+//   create(numberX){
+//     let arr = new Array();
+//     for (var i = 0; i < numberX ; i++) {
+//       arr.push(this.randomElement(i, 10))
+//     }
+//     return arr;
+//   }
+// }
+
+// const sampleData = new SampleData();

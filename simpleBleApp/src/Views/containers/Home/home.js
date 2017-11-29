@@ -13,23 +13,6 @@ import realmMeasureService from '../../../Realm/realmControl.js'
 import Utils from '../../../Redux/reducers/Utils.js'
 import Style from '../../Style'
 
-class SampleData{
-  randomElement(x, max){
-    return ( 
-      { x: x, y : Math.random()*max | 0}
-    );
-  }
-  create(numberX){
-    let arr = new Array();
-    for (var i = 0; i < numberX ; i++) {
-      arr.push(this.randomElement(i, 10))
-    }
-    return arr;
-  }
-}
-
-const sampleData = new SampleData();
-
 class HomeComponent extends Component {
   constructor(props){
     super(props)
@@ -41,48 +24,30 @@ class HomeComponent extends Component {
     }
   }
 
-  getRealmMeasureStepsCount(){
-    realmMeasureDataLimit = realmMeasureService.findWithLimit(20);
-    let dataStepsCountLimit = realmMeasureDataLimit.map(function(item, index){
-      return( item.stepsCount );
-    }).slice(0, 20)
-    return dataStepsCountLimit
+  getRealmMeasure(type, limit){
+    let realmMeasureDataLimit = realmMeasureService.findWithLimit(limit);
+    let dataLimit = realmMeasureDataLimit.map(function(item, index){
+      switch(type){
+        case 'stepsCount':
+          return( item.stepsCount );
+        case 'distance':
+          return( item.distance );
+        case 'caloriesBurn':
+          return( item.caloriesBurn );
+        case 'heartrate':
+          return( item.heartRate );
+        case 'spO2':
+          return( item.spO2 );
+        case 'bloodPressure':
+          return( item.bloodPressure );
+      }
+    })
+    return dataLimit
   }
 
-  componentWillMount(){
-    realmMeasureDataLimit = realmMeasureService.findWithLimit(50);
-    let dataStepsCountLimit = realmMeasureDataLimit.map(function(item, index){
-      return(
-        item.stepsCount
-      );
-    }).slice(0, 20)
-    let dataHeartRateLimit = realmMeasureDataLimit.map(function(item,index){
-      return(
-        item.heartRate
-      );
-    })
-    let dataSpO2Limit = realmMeasureDataLimit.map(function(item,index){
-      return(
-        item.spO2
-      );
-    })
-    let dataBloodPressureLimit = realmMeasureDataLimit.map(function(item, index){
-      return(
-        item.bloodPressure
-      );
-    })
+  componentWillReceiveProps(newProps){
     this.setState({
-      dataStepsCountLimit: dataStepsCountLimit,
-      dataHeartRateLimit: dataHeartRateLimit,
-      dataSpO2Limit: dataSpO2Limit,
-      dataBloodPressureLimit: dataBloodPressureLimit,
-      lastSteps: dataStepsCountLimit[0],
-      lastHeartRate: dataHeartRateLimit[0]
     })
-    setInterval(this.tick,100)
-  }
-  tick=()=>{
-    this.forceUpdate()
   }
 
   // shouldComponentUpdate(newProps) {
@@ -93,6 +58,7 @@ class HomeComponent extends Component {
     // return false
   // }
   componentWillUpdate(newProps){
+
     // if(newProps.state==='CONNECTED'){
     //   this.setState((prevState) =>{
     //     prevState.stateConnect = true,
@@ -110,6 +76,12 @@ class HomeComponent extends Component {
 
   _onPressStepsCount=() =>{
 
+  }
+  componentDidMount=()=>{
+    this.setState({
+      lastSteps: this.getRealmMeasure('stepsCount',1)[0],
+      lastHeartRate: this.getRealmMeasure('heartrate',1)[0]
+    })
   }
 
   render() {
@@ -130,11 +102,11 @@ class HomeComponent extends Component {
             <TouchableOpacity onPress={this._onPressStepsCount}>
               <Text style={{textAlign : 'center', alignItems: 'center',}}>Bước chân</Text>
             </TouchableOpacity>
-            <BarChart data={this.getRealmMeasureStepsCount()}/>
+            <BarChart data={this.getRealmMeasure('stepsCount', 20)}/>
             <Text style={{textAlign : 'center', height: 100}}>Nhịp tim & SpO2</Text>
-            <LineChart data={this.state.dataHeartRateLimit} data1={sampleData.create(50)} />
+            <LineChart data={this.getRealmMeasure('heartrate', 50)} data1={this.getRealmMeasure('spO2',50)} />
             <Text style={{textAlign : 'center', height: 100}}>Giấc ngủ (coming soon)</Text>
-            <LineChart data={this.state.dataBloodPressureLimit} data1={sampleData.create(50)}/>
+            <LineChart data={this.getRealmMeasure('bloodPressure', 50)} data1={this.getRealmMeasure('distance', 50)}/>
           </View>
         </ScrollView>
       </View>
@@ -143,23 +115,23 @@ class HomeComponent extends Component {
 }
 
 const mapStateToProps=(state) =>{
-  const deviceId = state.getIn(['ble', 'selectedDeviceUUID'])
-  const serviceId = state.getIn(['ble', 'selectedServiceUUID'])
-  const characteristicId = state.getIn(['ble', 'selectedCharacteristicUUID'])
+  // const deviceId = state.getIn(['ble', 'selectedDeviceUUID'])
+  // const serviceId = state.getIn(['ble', 'selectedServiceUUID'])
+  // const characteristicId = state.getIn(['ble', 'selectedCharacteristicUUID'])
   return ({
-    selectedDeviceId: deviceId,
-    state: state.getIn(['ble', 'state']),
-    devices: state.getIn(['ble', 'devices']),
-    sceneState: state.getIn(['route', 'state']),
-    services: state.getIn(['ble', 'devices', deviceId, 'services']),
-    characteristic: state.getIn(['ble', 'devices', deviceId, 'services', serviceId, 'characteristics', characteristicId])
+  //   selectedDeviceId: deviceId,
+  //   state: state.getIn(['ble', 'state']),
+  //   devices: state.getIn(['ble', 'devices']),
+  //   sceneState: state.getIn(['route', 'state']),
+  //   services: state.getIn(['ble', 'devices', deviceId, 'services']),
+  //   characteristic: state.getIn(['ble', 'devices', deviceId, 'services', serviceId, 'characteristics', characteristicId])
   });
 }
 
 const mapDispatchToProps = {
-  changeDeviceState: ble.changeDeviceState,
-  selectService: ble.selectService,
-  selectCharacteristic: ble.selectCharacteristic
+  // changeDeviceState: ble.changeDeviceState,
+  // selectService: ble.selectService,
+  // selectCharacteristic: ble.selectCharacteristic
 }
 
 export default connect(

@@ -11,7 +11,8 @@ import configureStore from './src/Redux/store/configureStore'
 import BleComponent from './src/Ble/BleComponent'
 import ErrorComponent from './src/Views/components/error/ErrorComponent'
 import RootComponent from './src/Views'
-import { checkPermission, requestPermission } from 'react-native-android-permissions';
+import VirtualBle from './src/Ble/VirtualBle.js'
+// import { checkPermission, requestPermission } from 'react-native-android-permissions';
 
 const stateTransformer = (state) => {
   if (Iterable.isIterable(state)) {
@@ -26,25 +27,25 @@ const store = configureStore()
 
 export default class App extends Component {
 
-  componentDidMount() {
-    this.checkAndGrantPermissions();
-  }
+  // componentDidMount() {
+  //   this.checkAndGrantPermissions();
+  // }
 
-  checkAndGrantPermissions() {
-    checkPermission("android.permission.ACCESS_COARSE_LOCATION").then((result) => {
-      console.log("Already Granted!");
-      console.log(result);
-    }, (result) => {
-      console.log("Not Granted!");
-      console.log(result);
-      requestPermission("android.permission.ACCESS_COARSE_LOCATION").then((result) => {
-        console.log("Granted!", result);
-      }, (result) => {
-        console.log("Not Granted!");
-        console.log(result);
-      });
-    });
-  }
+  // checkAndGrantPermissions() {
+  //   checkPermission("android.permission.ACCESS_COARSE_LOCATION").then((result) => {
+  //     console.log("Already Granted!");
+  //     console.log(result);
+  //   }, (result) => {
+  //     console.log("Not Granted!");
+  //     console.log(result);
+  //     requestPermission("android.permission.ACCESS_COARSE_LOCATION").then((result) => {
+  //       console.log("Granted!", result);
+  //     }, (result) => {
+  //       console.log("Not Granted!");
+  //       console.log(result);
+  //     });
+  //   });
+  // }
 
   render() {
     return (
@@ -52,6 +53,7 @@ export default class App extends Component {
         <View style={{flex:1}}>
           <ErrorComponent />
           <BleComponent />
+          <VirtualBle />
           <RootComponent />
         </View>
       </Provider>

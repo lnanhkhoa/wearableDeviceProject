@@ -63,7 +63,7 @@ class SettingsComponent extends Component {
 
   renderHeader(item){
     return(
-      <Text style={styles.header}>
+      <Text style={styles.dong}>
         . {item.title}
       </Text>
     );
@@ -78,10 +78,10 @@ class SettingsComponent extends Component {
     }
 
     return(
-      <TouchableOpacity style={styles.child} onPress={_onPressButtonChangeScene}>
-        <Text>{item.iconLeft} </Text>
-        <Text>{item.title} </Text>
-        <Text>{item.details} </Text>
+      <TouchableOpacity style={styles.dong} onPress={_onPressButtonChangeScene}>
+        <Text style={styles.trai}>{item.iconLeft} </Text>
+        <Text style={styles.hinh}>{item.title} </Text>
+        <Text style={styles.trai}>{item.details} </Text>
       </TouchableOpacity>
     );
   }
@@ -107,29 +107,42 @@ class SettingsComponent extends Component {
 
 
 const styles = StyleSheet.create({
-  container:{
+  container: {
     flex: 1,
-
-    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F5FCFF',
   },
-  header:{
-    paddingBottom: 10,
-    paddingTop: 10,
-    paddingLeft: 5
-  },
-  child:{
-    padding:5
-  },
-  title: {
-    fontWeight: 'bold',
+  welcome: {
+    fontSize: 20,
     textAlign: 'center',
-    padding: 10
+    margin: 10,
   },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  instructions: {
+    textAlign: 'center',
+    color: '#333333',
+    marginBottom: 5,
   },
-})
+  dong:{
+    borderBottomWidth:1,
+    borderRightWidth:1,
+    padding:15,
+    flexDirection:'row'
+  },
+  trai:{
+    flex:1,
+    justifyContent:"center",
+    alignItems:"center"
+  },
+  phai:{
+    flex:2
+  },
+  hinh:{
+    width:100,
+    height: 100,
+    borderRadius:50
+  }
+});
 
 export default connect(
   state => {
