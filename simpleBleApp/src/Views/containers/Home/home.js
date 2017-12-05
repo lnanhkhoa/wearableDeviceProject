@@ -20,12 +20,14 @@ class HomeComponent extends Component {
       lastSteps: 0,
       lastHeartRate: 0,
       stateConnect: false,
-      scrollEnabled: true
+      scrollEnabled: true,
+      shouldUpdate: false,
+      toogleUpdateEvent: false
     }
   }
 
   getRealmMeasure(type, limit){
-    let realmMeasureDataLimit = realmMeasureService.findWithLimit(limit);
+    let realmMeasureDataLimit = realmMeasureService.findWithLimit(limit)
     let dataLimit = realmMeasureDataLimit.map(function(item, index){
       switch(type){
         case 'stepsCount':
@@ -46,19 +48,19 @@ class HomeComponent extends Component {
   }
 
   componentWillReceiveProps(newProps){
-    this.setState({
-    })
+    this.forceUpdate()
   }
 
   // shouldComponentUpdate(newProps) {
-    // if((newProps.state==='CONNECTED' ^ this.state.stateConnect) || (newProps.state==='DISCONNECTED' ^ !this.state.stateConnect)){
-    // if(false){
-      // return true
-    // }
-    // return false
+  //   if((newProps.state==='CONNECTED' ^ this.state.stateConnect) || (newProps.state==='DISCONNECTED' ^ !this.state.stateConnect)){
+  //     if(false){
+  //       return true
+  //     }
+  //     return false
+  //   }
   // }
-  componentWillUpdate(newProps){
 
+  // componentWillUpdate(newProps){
     // if(newProps.state==='CONNECTED'){
     //   this.setState((prevState) =>{
     //     prevState.stateConnect = true,
@@ -70,18 +72,14 @@ class HomeComponent extends Component {
       // let characteristicUUID = "00002a37-0000-1000-8000-00805f9b34fb"
       // this.props.selectService(this.props.deviceId, serviceUUID );
       // this.props.selectCharacteristic(this.props.deviceId, serviceUUID, characteristicUUID);
-
     // }
+  // }
+
+  _onPressStepsCount=()=>{
+    realmMeasureService.saveRandomData()
   }
 
-  _onPressStepsCount=() =>{
-
-  }
   componentDidMount=()=>{
-    this.setState({
-      lastSteps: this.getRealmMeasure('stepsCount',1)[0],
-      lastHeartRate: this.getRealmMeasure('heartrate',1)[0]
-    })
   }
 
   render() {
@@ -91,18 +89,20 @@ class HomeComponent extends Component {
           <View style={{flexDirection:'row'}}>
             <View style={{flex:1,}}>
               <Text style={{textAlign : 'center'}}>Số bước chân gần nhất</Text>
-              <Text style={{textAlign : 'center'}}>{this.state.lastSteps}</Text>
+              <Text style={{textAlign : 'center'}}>{this.getRealmMeasure('stepsCount',1)[0]}</Text>
             </View>
             <View style={{flex:1,}}>
               <Text style={{textAlign : 'center'}}>Nhịp tim gần nhất</Text>
-              <Text style={{textAlign : 'center'}}>{this.state.lastHeartRate}</Text>
+              <Text style={{textAlign : 'center'}}>{this.getRealmMeasure('heartrate',1)[0]}</Text>
             </View>
           </View>
           <View style={{flexDirection:'column'}}>
             <TouchableOpacity onPress={this._onPressStepsCount}>
               <Text style={{textAlign : 'center', alignItems: 'center',}}>Bước chân</Text>
             </TouchableOpacity>
-            <BarChart data={this.getRealmMeasure('stepsCount', 20)}/>
+            <BarChart 
+              data={this.getRealmMeasure('stepsCount', 20)}
+            />
             <Text style={{textAlign : 'center', height: 100}}>Nhịp tim & SpO2</Text>
             <LineChart data={this.getRealmMeasure('heartrate', 50)} data1={this.getRealmMeasure('spO2',50)} />
             <Text style={{textAlign : 'center', height: 100}}>Giấc ngủ (coming soon)</Text>

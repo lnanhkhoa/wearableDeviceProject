@@ -25,19 +25,20 @@ const MeasurementSchema = {
   }
 };
 
+var currentDate = new Date(2017,0,1)
 
 const realm = new Realm({schema: [PersonSchema, MeasurementSchema]});
-  // realm.write(() => {
-  //   let Person = realm.objects('Person');
-  //   realm.delete(Person);
-  //   let measure = realm.objects('Measurement');
-  //   realm.delete(measure);
-  //   while(true){
-  //     let arrayData = Utils.createRandomData();
-  //     realm.create('Measurement',objectRealm.createNewDataSensor(arrayData));
-  //     if(arrayData[6] > new Date(2018,0,0)) break;
-  //   }
-  // })
+  realm.write(() => {
+    let Person = realm.objects('Person');
+    realm.delete(Person);
+    let measure = realm.objects('Measurement');
+    realm.delete(measure);
+    while(true){
+      let arrayData = Utils.createRandomData();
+      realm.create('Measurement',objectRealm.createNewDataSensor(arrayData));
+      if(arrayData[6] > new Date(2018,0,0)) break;
+    }
+  })
 
 
 let realmMeasureService = {
@@ -58,13 +59,13 @@ let realmMeasureService = {
     return realmAllObject.slice(0,realmAllObject.length);
   },
   save: function(todo) {
-    if (realm.objects('Measurement').filtered("updatedAt = '" + todo.updatedAt + "'").length) return;
-
     realm.write(() => {
-      todo.updatedAt = new Date();
-      
       realm.create('Measurement', todo);
     })
+  },
+  saveRandomData: function(){
+    let lastDate = realm.objects('Measurement').sorted([['updatedAt', true]])[0].updatedAt
+    this.save(objectRealm.createNewDataSensor(Utils.createRandomData()))
   },
 
   update: function(todo, callback) {

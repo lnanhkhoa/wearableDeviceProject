@@ -1,8 +1,5 @@
 
-
-
-var currentDate = new Date(2017,0,1);
-
+var currentDate = new Date(2017,0,1)
 let Utils = {
   increaseDate: function(currentDate){
     if(currentDate instanceof Date && !isNaN(currentDate.valueOf())){

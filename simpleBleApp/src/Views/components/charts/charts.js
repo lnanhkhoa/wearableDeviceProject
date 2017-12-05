@@ -53,6 +53,7 @@ export class LineChart extends Component {
       scrollEnabled: true
     }
   }
+  
   render() {
     return (
       <ScrollView scrollEnabled={this.state.scrollEnabled}>
