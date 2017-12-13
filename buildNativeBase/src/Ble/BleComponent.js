@@ -86,7 +86,6 @@ class BleComponent extends Component {
           }
           newProps.changeDeviceState(newProps.selectedDeviceId, ble.DEVICE_STATE_DISCONNECTED);
         });
-
         newProps.changeDeviceState(newProps.selectedDeviceId, ble.DEVICE_STATE_DISCONNECTING);
         break;
 
@@ -182,6 +181,12 @@ class BleComponent extends Component {
 
       return true
     })
+
+    // Handle values for Smartwatch
+  }
+
+  componentDidUpdate(preProps){
+
   }
 
   render() {

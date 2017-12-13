@@ -16,6 +16,7 @@ class Home extends Component {
 	}
 
 	render() {
+		console.log(this.props.navigation)
 		return (
 			<Container>
 				<StatusBar barStyle="light-content" />

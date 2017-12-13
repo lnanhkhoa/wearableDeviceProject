@@ -3,7 +3,7 @@
 import React from "react";
 import { DrawerNavigator } from "react-navigation";
 
-import Information from "./components/information/";
+import Information from "./components/Informations/";
 import Measurement from "./components/Measurement/";
 import SideBar from "./components/sidebar";
 import Home from './components/home/';

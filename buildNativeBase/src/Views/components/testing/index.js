@@ -29,7 +29,7 @@ class Testing extends Component {
 	}
 }
 
-export default class TestingComponent extends Component {
+class TestingComponent1 extends Component {
 	constructor(props){
 		super(props)
 	}
@@ -42,6 +42,20 @@ export default class TestingComponent extends Component {
 					{ render1%2 === 1 && <Testing /> } 
 					<Button title="Button" onPress={()=>this.forceUpdate()}/>
 				</View>
+		);
+	}
+}
+
+import { ProgressDialog } from 'react-native-simple-dialogs';
+
+export default class TestingComponent extends Component {
+	render(){
+		return(
+			<ProgressDialog 
+		    visible={true} 
+		    title="Progress Dialog" 
+		    message="Please, wait..."
+			/>
 		);
 	}
 }

@@ -1,17 +1,13 @@
-// 'use strict';
+import { AppNavigator } from '../../Views/AppNavigator.js'
+import { NavigationActions } from "react-navigation";
 
-// import { Map } from 'immutable'
-// import { ActionConst } from 'react-native-router-flux'
-// import * as SceneConst from './Const.js' 
 
-// const defaultState = Map({
-//     'state' : SceneConst.DEVICES_SCENE 
-// })
+console.log(AppNavigator)
+let initNavState = AppNavigator.router.getStateForAction(
+NavigationActions.init()
+);
 
-// export default function (state = defaultState, action) {
-//     switch(action.type) {
-//         case ActionConst.FOCUS:
-//             return state.set('state', action.scene.sceneKey);
-//     }
-//     return state;
-// } 
+export default (state = initNavState, action) => {
+  const newState = AppNavigator.router.getStateForAction(action, state) 
+  return newState || state;
+};

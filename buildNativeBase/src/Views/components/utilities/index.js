@@ -15,8 +15,9 @@ import {
   Right,
   Body
 } from "native-base";
-
 import styles from "./styles";
+import { connect, ble } from '../../../Redux/'
+
 const datas = [
   {
     text: "Update Time for Smartwatch",
@@ -37,7 +38,7 @@ class Utilities extends Component {
             </Button>
           </Left>
           <Body>
-            <Title>List Avatar</Title>
+            <Title>Utilities</Title>
           </Body>
           <Right />
         </Header>
@@ -62,4 +63,13 @@ class Utilities extends Component {
   }
 }
 
-export default Utilities;
+const mapStateToProps=(state) =>({
+  selectedDeviceId: state.getIn(['ble', 'selectedDeviceUUID']),
+  sceneState: state.getIn(['route', 'state'])
+})
+
+const mapDispatchToProps = {
+  changeDeviceState: ble.changeDeviceState
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Utilities);

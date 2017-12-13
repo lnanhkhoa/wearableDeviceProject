@@ -13,13 +13,14 @@ const defaultState = Map({
   state: ble.DEVICE_STATE_DISCONNECTED,
   operations: Map(),
   transactionId: 0,
+  updateStates: List([true, true
+  ])
 });
 
 export default (state = defaultState, action) => {
   const transactionId = state.get('transactionId');
 
   switch (action.type) {
-    
     case ble.START_SCAN:
       return state.merge(Map({scanning: true,devices:OrderedMap()}));
     case ble.STOP_SCAN:
@@ -86,6 +87,10 @@ export default (state = defaultState, action) => {
       return state.set('errors', state.get('errors').push(action.errorMessage))
     case ble.POP_ERROR:
       return state.set('errors', state.get('errors').pop())
+    case ble.UPDATE_STATES:
+      let keysOfUpdateType = ['HRMeasurement', 'HRLocation', 'PedoMeasurement']
+      return state.set('updateStates', state.get('updateStates')
+        .update(keysOfUpdateType.indexOf(action.updateType), val =>{ return (!val) }));
     default:
       return state;
   }

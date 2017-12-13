@@ -19,8 +19,8 @@ import {
   Separator,
   List
 } from "native-base";
-
 import styles from "./styles";
+import { connect } from '../../../Redux/'
 
 const group1 = [
   {
@@ -140,7 +140,6 @@ class ListItemComponent extends Component{
       </ListItem>
       {
       this.props.data.map((item, index)=>(
-        
         this.renderItem(item)
       ))
       }
@@ -161,11 +160,41 @@ class Settings extends Component {
       }
     };
   }
+  // init edit group
+  componentDidMount(){
+    if(this.props.deviceName && this.props.state === 'CONNECTED'){
+      group1[0].right.value = this.stateConnect(true)
+      group1[0].route = this.routeConnect(true)
+      this.forceUpdate()
+    }
+  }
+
+  componentWillReceiveProps(nextProps){
+    if(nextProps.state === 'CONNECTED'){
+      group1[0].right.value = this.stateConnect(true)
+      group1[0].route = this.routeConnect(true)
+    }
+    else{
+      group1[0].right.value = this.stateConnect(false)
+      group1[0].route = this.routeConnect(false)
+    }
+  }
+  shouldComponentUpdate(){
+    return true
+  }
 
   onValueChange(value: string) {
     this.setState({
       selected1: value
     });
+  }
+  
+  stateConnect=(bool: bool)=>{
+    return bool?this.props.deviceName:'not connected'
+  }
+
+  routeConnect=(bool: bool)=>{
+    return bool?"FeatureDeviceConnected":"ConnectDevice"
   }
 
   render() {
@@ -195,4 +224,16 @@ class Settings extends Component {
   }
 }
 
-export default Settings;
+
+
+export default connect( state => {
+    const selectedDeviceUUID = state.getIn(['ble','selectedDeviceUUID'])
+  return ({
+    selectedDeviceUUID: selectedDeviceUUID,
+    state: state.getIn(['ble', 'state']),
+    scanning: state.getIn(['ble', 'scanning']),
+    deviceName: state.getIn(['ble','devices', selectedDeviceUUID, 'name']),
+    errors: state.getIn(['ble','errors'])
+  })
+}
+)(Settings);

@@ -142,3 +142,11 @@ export function completeTransaction(transactionId) {
     transactionId
   }
 }
+
+export const UPDATE_STATES = "UPDATE_STATES"
+export function  updateStates(updateType: string){
+  return {
+    type: UPDATE_STATES,
+    updateType
+  }
+}
