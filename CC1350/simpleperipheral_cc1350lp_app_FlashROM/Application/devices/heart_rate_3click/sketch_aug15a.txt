@@ -1,0 +1,205 @@
+#include <Wire.h>
+#include "heartrate_3_click.h"
+#include "SimpleKalmanFilter.h"
+
+SimpleKalmanFilter bo_loc(2, 2, 0.001);
+int RESETZ = 4;
+float befehl = 0;
+int AFE_ADDR = 0x58;
+byte dataLedGreenArray[3] = {0};
+long dataLedGreen = 0,GR_data_filter_kalman = 0;
+float GreenDataDCRemove, RedDataDCRemove,IRDataDCRemove ;
+float w1 = 0, w2 = 0, w3 = 0, alpha = 0.7, alpha2 = 0.4;
+// Variable and define for beat detecter////////////////////////////////////////////////////////////
+#define num_data 10
+#define num_data2 20
+#define num_time_array 10
+float data_array[num_data] ;
+float data_array2[num_data2] ;
+float time_array[num_time_array];
+float smooth_data, old_smooth_data;
+bool up = false, down = true;
+unsigned long time_up, time_dw, time_up_old;
+float means, sum, sum2, means2, max_data, min_data;
+bool beatDetected = false;
+int dem = 0,refresh = 0;;
+// Variable and define for beat detecter////////////////////////////////////////////////////////////
+
+void setup() {
+  Serial.begin(250000);
+  Wire.begin();  
+  pinMode(RESETZ, OUTPUT);
+  AFE_RESETZ_Init();
+  AFE_Trigger_HWReset();
+  AFE_Init();
+  heartrate_3_init();
+}
+
+void loop() { 
+  dataLedGreen = get_GR_data();
+  // kalman filter
+  GR_data_filter_kalman = bo_loc.updateEstimate(dataLedGreen);
+  // DC remove
+  GreenDataDCRemove = dcRemoval(GR_data_filter_kalman, w1, alpha);
+  // Beat detecter
+  //beat_detector(GreenDataDCRemove);
+  // Show data
+  Serial.print(dataLedGreen);
+  Serial.print("\t");
+  Serial.println(GR_data_filter_kalman);
+  delay(10);
+}
+
+long get_GR_data(){
+  I2C_read(AFE_ADDR,0x2C, dataLedGreenArray,3);
+  long dataLongLed1;
+  long old_data;
+  //show_bit_data(0);
+  return ((dataLongLed1 | dataLedGreenArray[0]) << 16) | ((dataLongLed1 | dataLedGreenArray[1]) << 8) | dataLedGreenArray[2];
+  
+}
+
+void show_bit_data(int positionBit){
+  switch(positionBit){
+    case 0:
+      show_data_bit0();
+      Serial.println();
+      break;
+    case 1:
+      show_data_bit1();
+      Serial.println();
+      break;
+    case 2:
+      show_data_bit2();
+      Serial.println();
+      break;
+    case 3:
+      show_data_bit0();
+      Serial.print("  ");
+      show_data_bit1();
+      Serial.print("  ");
+      show_data_bit2();
+      Serial.println();
+      break;
+  }
+}
+
+void show_data_bit0(){
+  Serial.print(dataLedGreenArray[0]>>7&0b00000001);
+  Serial.print(dataLedGreenArray[0]>>6&0b00000001);
+  Serial.print(dataLedGreenArray[0]>>5&0b00000001);
+  Serial.print(dataLedGreenArray[0]>>4&0b00000001);
+  Serial.print(dataLedGreenArray[0]>>3&0b00000001);
+  Serial.print(dataLedGreenArray[0]>>2&0b00000001);
+  Serial.print(dataLedGreenArray[0]>>1&0b00000001);
+  Serial.print(dataLedGreenArray[0]|0b00000001);
+}
+
+void show_data_bit1(){
+  Serial.print(dataLedGreenArray[1]>>7&0b00000001);
+  Serial.print(dataLedGreenArray[1]>>6&0b00000001);
+  Serial.print(dataLedGreenArray[1]>>5&0b00000001);
+  Serial.print(dataLedGreenArray[1]>>4&0b00000001);
+  Serial.print(dataLedGreenArray[1]>>3&0b00000001);
+  Serial.print(dataLedGreenArray[1]>>2&0b00000001);
+  Serial.print(dataLedGreenArray[1]>>1&0b00000001);
+  Serial.print(dataLedGreenArray[1]&0b00000001);
+}
+
+void show_data_bit2(){
+  Serial.print(dataLedGreenArray[2]>>7&0b00000001);
+  Serial.print(dataLedGreenArray[2]>>6&0b00000001);
+  Serial.print(dataLedGreenArray[2]>>5&0b00000001);
+  Serial.print(dataLedGreenArray[2]>>4&0b00000001);
+  Serial.print(dataLedGreenArray[2]>>3&0b00000001);
+  Serial.print(dataLedGreenArray[2]>>2&0b00000001);
+  Serial.print(dataLedGreenArray[2]>>1&0b00000001);
+  Serial.print(dataLedGreenArray[2]&0b00000001);
+}
+
+float dcRemoval(float x, float w, float alpha) {
+  float w_n = x + alpha * w;
+  float temp = w;
+  w1 = w_n;
+  return w_n - temp;
+}
+
+float dcRemoval2(float x, float w, float alpha) {
+  float w_n = x + alpha * w2;
+  float temp = w2;
+  w2 = w_n;
+  return w_n - temp;
+}
+
+float dcRemoval3(float x, float w, float alpha) {
+  float w_n = x + alpha * w3;
+  float temp = w3;
+  w3 = w_n;
+  return w_n - temp;
+}
+
+unsigned int beat_detector(float data) {
+  sum = 0;
+  sum2 = 0;
+  for (int i = 0 ; i < num_data - 1  ; i++ ) {
+    data_array[i] = data_array[i + 1];
+    sum += data_array[i];
+  }
+  data_array[num_data - 1] = data;
+  sum += data;
+  means = sum / num_data;
+
+  for (int i = 0 ; i < num_data2 - 1  ; i++ ) {
+    data_array2[i] = data_array2[i + 1];
+    sum2 += data_array2[i];
+  }
+  data_array2[num_data2 - 1] = means;
+  sum2 += means;
+  means2 = sum2 * 20 / num_data2;
+  old_smooth_data = smooth_data;
+  smooth_data = dcRemoval3(means2, w3, alpha2);
+  Serial.print(smooth_data);
+  Serial.print("\t");
+  Serial.println(data);
+  //  Serial.print("\t");
+  //  Serial.println(means);
+
+   if (smooth_data > old_smooth_data && smooth_data > 0 && down == true ) {
+      if (dem < 20) {
+        dem++;
+      }
+      time_up_old = time_up;
+      time_up = millis();
+      float time_diff = time_up - time_up_old;
+      float t_sum = 0, t_means = 0;
+      for (int i = 0 ; i < num_time_array - 1  ; i++ ) {
+        t_sum +=  time_array[i];
+        time_array[i] = time_array[i + 1];
+      }
+      t_sum += time_diff;
+      time_array[num_time_array - 1] = time_diff;
+      t_means = t_sum / num_time_array;
+      refresh++;
+      if (dem > 10 && refresh > 9) {
+        refresh = 0;
+        //Serial.print("Time: ");
+        //Serial.print(t_means);
+        Serial.print("  HR: ");
+        float HR = 60000 / t_means;
+        Serial.println(HR);
+      }
+      //Serial.println("TOP");
+      down = false;
+      up = true;
+      beatDetected = true;
+  }
+  if (smooth_data < old_smooth_data && smooth_data < 0 && up == true && abs(means) > 0.3) {
+    time_dw = millis();
+    down = true;
+    up = false;
+    //Serial.println("BOT");
+  }
+}
+
+
+
