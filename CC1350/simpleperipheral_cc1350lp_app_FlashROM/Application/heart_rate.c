@@ -49,7 +49,6 @@
  * INCLUDES
  */
 #include <string.h>
-
 #include <ti/sysbios/knl/Task.h>
 #include <ti/sysbios/knl/Clock.h>
 #include <ti/sysbios/knl/Semaphore.h>
@@ -66,8 +65,8 @@
 #include "../PROFILES/devinfoservice.h"
 #include "../PROFILES/heartrateservice.h"
 #include "../PROFILES/battservice.h"
-#include "../PROFILES/simple_gatt_profile.h"
-
+#include "../PROFILES/Apedometer.h"
+#include "../PROFILES/Asimple_gatt_profile.h"
 #include "osal_snv.h"
 #include "icall_apimsg.h"
 
@@ -134,7 +133,7 @@
 #define DEFAULT_BATT_PERIOD                             15000
 
 // How often to perform periodic event (in msec)
-#define SBP_PERIODIC_EVT_PERIOD               5000
+#define SBP_PERIODIC_EVT_PERIOD                         5000
 
 
 // Arbitrary values used to simulate measurements.
@@ -158,7 +157,7 @@
 
 // Battery Event.
 #define HEARTRATE_ACC_EVT                               (uint16_t)(1 << 4)
-// #define HEARTRATE_BATT_PERIODIC_EVT                  (uint16_t)(1 << 5)
+#define HEARTRATE_BATT_PERIODIC_EVT                  (uint16_t)(1 << 5)
 
 // Key Press events.
 #define HEARTRATE_KEY_CHANGE_EVT                        (uint16_t)(1 << 6)
@@ -168,8 +167,10 @@
 
 #define SBP_CHAR_CHANGE_EVT                             (uint16_t)(1 << 8)
 #define SBP_PERIODIC_EVT                                (uint16_t)(1 << 9)
+#define PEDO_CHAR_CHANGE_EVT                             (uint16_t)(1 << 10)
 
 #define HEARTRATE_MEAS_LEN                              9
+#define HEARTRATE_RAWMEAS_LEN                           9
 
 /*********************************************************************
  * TYPEDEFS
@@ -208,6 +209,7 @@ static ICall_Semaphore sem;
 
 // Clock instances for internal periodic events.
 static Clock_Struct measPerClock;
+static Clock_Struct rawMeasPerClock;
 static Clock_Struct battPerClock;
 static Clock_Struct periodicClock;
 
@@ -232,10 +234,10 @@ static uint8_t scanData[] =
   0x12,   // length of this data
   GAP_ADTYPE_LOCAL_NAME_COMPLETE,
   'H',
-  'e',
-  'a',
-  'r',
-  't',
+  'E',
+  'A',
+  'R',
+  'T',
   ' ',
   'R',
   'a',
@@ -247,7 +249,7 @@ static uint8_t scanData[] =
   'n',
   's',
   'o',
-  'r'
+  'R'
 };
 
 //GAP - Advertisement data (max size = 31 bytes)
@@ -267,7 +269,7 @@ static uint8_t advertData[] =
 };
 
 // Device name attribute value.
-static uint8_t attDeviceName[GAP_DEVICE_NAME_LEN] = "Heart Rate Sensor";
+static uint8_t attDeviceName[GAP_DEVICE_NAME_LEN] = "HEART Rate SensoR";
 
 // GAP connection handle.
 static uint16_t gapConnHandle;
@@ -282,7 +284,7 @@ static uint16_t heartRateRrInterval2 = HEARTRATE_BPM2RR(HEARTRATE_BPM_DEFAULT);
 static bool advCancelled = FALSE;
 
 // Index for array below.
-static uint8_t flagsIdx = 0;
+static uint8_t flagsIdx = 2;
 
 // Flags for simulated measurements.
 static const uint8_t heartRateflags[HEARTRATE_FLAGS_IDX_MAX] =
@@ -354,6 +356,11 @@ static simpleProfileCBs_t SimpleBLEPeripheral_simpleProfileCBs =
   SimpleBLEPeripheral_charValueChangeCB // Characteristic value change callback
 };
 
+//static pedometerCBs_t Pedometer_pedometerCBs =
+//{
+//  Pedometer_pedometerCB // Characteristic value change callback
+//};
+
 /*********************************************************************
  * PUBLIC FUNCTIONS
  */
@@ -416,6 +423,11 @@ void HeartRate_init(void)
   Util_constructClock(&measPerClock, HeartRate_clockHandler,
                       DEFAULT_HEARTRATE_PERIOD, 0, false,
                       HEARTRATE_MEAS_PERIODIC_EVT);
+
+  Util_constructClock(&rawMeasPerClock, HeartRate_clockHandler,
+                      DEFAULT_HEARTRATE_PERIOD, 0, false,
+                      HEARTRATE_MEAS_PERIODIC_EVT);
+
   Util_constructClock(&battPerClock, HeartRate_clockHandler,
                       DEFAULT_BATT_PERIOD, 0, false,
                       HEARTRATE_BATT_PERIODIC_EVT);
@@ -497,6 +509,9 @@ void HeartRate_init(void)
   // Add Simple Profile service.
   SimpleProfile_AddService(GATT_ALL_SERVICES); // Simple GATT Profile
 
+  // Add Pedometer service.
+   Pedometer_AddService(GATT_ALL_SERVICES);
+
   // Setup the Heart Rate Characteristic Values.
   {
     uint8_t sensLoc = HEARTRATE_SENS_LOC_WRIST;
@@ -508,31 +523,35 @@ void HeartRate_init(void)
     uint8_t critical = DEFAULT_BATT_CRITICAL_LEVEL;
     Batt_SetParameter(BATT_PARAM_CRITICAL_LEVEL, sizeof(uint8_t), &critical);
   }
-
+  
+  // Setup Simple Profile Characteristic Values.
   {
-    uint8_t charValue1 = 1;
+    // uint8_t charValue1 = 1;
     uint8_t charValue2 = 2;
     uint8_t charValue3 = 3;
-    uint8_t charValue4 = 4;
+    uint8_t charValue4[5] = {0x01, 0x02, 0x03, 0x04, 0x05};
     uint8_t charValue5[SIMPLEPROFILE_CHAR5_LEN] = { 1, 2, 3, 4, 5 };
+    uint8_t charValue6 = 6;
 
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR1, sizeof(uint8_t),
-                               &charValue1);
+    // SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR1, sizeof(uint8_t),
+    //                            &charValue1);
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR2, sizeof(uint8_t),
                                &charValue2);
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR3, sizeof(uint8_t),
                                &charValue3);
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR4, sizeof(uint8_t),
+    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR4, sizeof(charValue4),
                                &charValue4);
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR5, SIMPLEPROFILE_CHAR5_LEN,
                                charValue5);
+    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR6, sizeof(uint8_t),
+                               &charValue6);
   }
 
-  // Setup the Accelerometer Characteristic Values.
-  // {
-  //   uint16_t accelRange = ACCEL_RANGE_2G;
-  //   Accel_SetParameter(ACCEL_RANGE, sizeof (uint16_t), &accelRange);
-  // }
+  // Setup Pedometer Characteristic Values.
+  {
+    uint16_t charValue = 0x0001;
+     Pedometer_SetParameter(Pedometer_CHAR1, sizeof (uint16_t), &charValue);
+   }
 
   // Register for Heart Rate service callback.
   HeartRate_Register(&HeartRate_serviceCB);
@@ -542,6 +561,9 @@ void HeartRate_init(void)
 
   // Register for Simple Profile service callback.
   SimpleProfile_RegisterAppCBs(&SimpleBLEPeripheral_simpleProfileCBs);
+
+  // Register for Simple Profile service callback.
+  // Pedometer_RegisterAppCBs(&SimpleBLEPeripheral_simpleProfileCBs);
 
   // Start the Device.
   GAPRole_StartDevice(&heartRatePeripheralCB);
@@ -793,8 +815,7 @@ static bool HeartRate_toggleAdvertising(void)
   advState = !advState;
 
   // Change the GAP advertisement status to opposite of current status.
-  GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof(uint8_t),
-                       &advState);
+  GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof(uint8_t), &advState);
 
   return advState;
 }
@@ -810,8 +831,7 @@ static void HeartRate_measNotify(void)
 {
   attHandleValueNoti_t heartRateMeas;
 
-  heartRateMeas.pValue = GATT_bm_alloc(gapConnHandle, ATT_HANDLE_VALUE_NOTI,
-                                       HEARTRATE_MEAS_LEN, NULL);
+  heartRateMeas.pValue = GATT_bm_alloc(gapConnHandle, ATT_HANDLE_VALUE_NOTI, HEARTRATE_MEAS_LEN, NULL);
   if (heartRateMeas.pValue != NULL)
   {
     uint8_t *p = heartRateMeas.pValue;
@@ -820,7 +840,10 @@ static void HeartRate_measNotify(void)
     // Build heart rate measurement structure from simulated values.
     *p++ = flags;
     *p++ = heartRateBpm;
-
+    *p++ = heartRateBpm;
+    *p++ = heartRateBpm;
+    *p++ = heartRateBpm;
+    
     if (flags & HEARTRATE_FLAGS_FORMAT_UINT16)
     {
       // Additional byte for 16 bit format.
@@ -849,15 +872,15 @@ static void HeartRate_measNotify(void)
       GATT_bm_free((gattMsg_t *)&heartRateMeas, ATT_HANDLE_VALUE_NOTI);
     }
 
-    // Update simulated values.
-    heartRateEnergyLvl += HEARTRATE_ENERGY_INCREMENT;
+//    Update simulated values.
+    // heartRateEnergyLvl += HEARTRATE_ENERGY_INCREMENT;
     // if (++heartRateBpm == HEARTRATE_BPM_MAX)
     // {
     //   heartRateBpm = HEARTRATE_BPM_DEFAULT;
-        heartRateBpm += 1;
+    //     heartRateBpm += 1;
     // }
 
-    heartRateRrInterval = heartRateRrInterval2 = HEARTRATE_BPM2RR(heartRateBpm);
+    // heartRateRrInterval = heartRateRrInterval2 = HEARTRATE_BPM2RR(heartRateBpm);
   }
 }
 
@@ -906,6 +929,7 @@ static void HeartRate_stateChangeEvt(gaprole_States_t newState)
   {
     // Stop periodic measurement of heart rate.
     Util_stopClock(&measPerClock);
+    Util_stopClock(&rawMeasPerClock);
     Util_stopClock(&periodicClock);
 
     if (newState == GAPROLE_WAITING_AFTER_TIMEOUT)
@@ -1017,12 +1041,14 @@ static void HeartRate_heartRateEvt(uint8_t event)
     if (gapProfileState == GAPROLE_CONNECTED)
     {
       Util_startClock(&measPerClock);
+      Util_startClock(&rawMeasPerClock);
     }
   }
   else if (event == HEARTRATE_MEAS_NOTI_DISABLED)
   {
     // Stop periodic measurement.
     Util_stopClock(&measPerClock);
+    Util_stopClock(&rawMeasPerClock);
   }
   else if (event == HEARTRATE_COMMAND_SET)
   {
@@ -1109,6 +1135,7 @@ static void HeartRate_measPerTask(void)
 
     // Restart timer.
     Util_startClock(&measPerClock);
+    Util_startClock(&rawMeasPerClock);
   }
 }
 
@@ -1149,6 +1176,22 @@ static void HeartRate_battPerTask(void)
 static void SimpleBLEPeripheral_charValueChangeCB(uint8_t paramID)
 {
   HeartRate_enqueueMsg(SBP_CHAR_CHANGE_EVT, paramID);
+}
+
+
+/*********************************************************************
+ * @fn      Pedometer_pedometerCB
+ *
+ * @brief   Callback from Simple Profile indicating a characteristic
+ *          value change.
+ *
+ * @param   paramID - parameter ID of the value that was changed.
+ *
+ * @return  None.
+ */
+static void Pedometer_pedometerCB(uint8_t paramID)
+{
+  HeartRate_enqueueMsg(PEDO_CHAR_CHANGE_EVT, paramID);
 }
 
 /*********************************************************************
@@ -1201,16 +1244,16 @@ static void SimpleBLEPeripheral_processCharValueChangeEvt(uint8_t paramID)
 static void SimpleBLEPeripheral_performPeriodicTask(void)
 {
   uint8_t valueToCopy;
+  uint8_t value[5] = {0x06, 0x05, 0x04, 0x03, 0x02};
 
-  // Call to retrieve the value of the third characteristic in the profile
+  // // Call to retrieve the value of the third characteristic in the profile
   if (SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR3, &valueToCopy) == SUCCESS)
   {
-    // Call to set that value of the fourth characteristic in the profile.
-    // Note that if notifications of the fourth characteristic have been
-    // enabled by a GATT client device, then a notification will be sent
-    // every time this function is called.
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR4, sizeof(uint8_t),
-                               &valueToCopy);
+  //   // Call to set that value of the fourth characteristic in the profile.
+  //   // Note that if notifications of the fourth characteristic have been
+  //   // enabled by a GATT client device, then a notification will be sent
+  //   // every time this function is called.
+    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR4, sizeof(value), value);
   }
 }
 

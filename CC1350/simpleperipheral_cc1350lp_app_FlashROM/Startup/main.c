@@ -59,7 +59,7 @@
 #include "bcomdef.h"
 #include "peripheral.h"
  #include "../Application/heart_rate.h"
-#include "../Application/wearableDevice.h"
+//#include "../Application/wearableDevice.h"
 
 /* Header files required to enable instruction fetch cache */
 #include <inc/hw_memmap.h>
@@ -171,8 +171,7 @@ int main()
   radCtrlHandle = PIN_open(&radCtrlState, radCtrlCfg);
   
 #ifdef POWER_SAVING
-  Power_registerNotify(&rFSwitchPowerNotifyObj, 
-                       PowerCC26XX_ENTERING_STANDBY | PowerCC26XX_AWAKE_STANDBY,
+  Power_registerNotify(&rFSwitchPowerNotifyObj, PowerCC26XX_ENTERING_STANDBY | PowerCC26XX_AWAKE_STANDBY,
                        (Power_NotifyFxn) rFSwitchNotifyCb, NULL);
 #endif //POWER_SAVING
 #endif //CC1350_LAUNCHXL
@@ -206,7 +205,7 @@ int main()
   GAPRole_createTask();
 
   HeartRate_createTask();
-  wearableDevice_init();
+  // wearableDevice_init();
 
   /* enable interrupts and start SYS/BIOS */
   BIOS_start();

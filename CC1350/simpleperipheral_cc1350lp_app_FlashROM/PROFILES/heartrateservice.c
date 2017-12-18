@@ -48,6 +48,7 @@
 /*********************************************************************
  * INCLUDES
  */
+#include <string.h>
 #include "bcomdef.h"
 #include "linkdb.h"
 #include "att.h"
@@ -88,6 +89,12 @@ CONST uint8 heartRateMeasUUID[ATT_BT_UUID_SIZE] =
   LO_UINT16(HEARTRATE_MEAS_UUID), HI_UINT16(HEARTRATE_MEAS_UUID)
 };
 
+// Heart rate measurement characteristic
+CONST uint8 heartRateValueUUID[ATT_BT_UUID_SIZE] =
+{ 
+  LO_UINT16(HEARTRATE_VALUE_UUID), HI_UINT16(HEARTRATE_VALUE_UUID)
+};
+
 // Sensor location characteristic
 CONST uint8 heartRateSensLocUUID[ATT_BT_UUID_SIZE] =
 { 
@@ -126,11 +133,20 @@ static CONST gattAttrType_t heartRateService = {ATT_BT_UUID_SIZE,
 // Note characteristic value is not stored here
 static uint8 heartRateMeasProps = GATT_PROP_NOTIFY;
 static uint8 heartRateMeas = 0;
+// static uint8 heartRateMeas[HEARTRATE_VALUE_MEASUREMENT_LEN] = {
+//   0x02, 0x05, 0x05, 
+//   0x01, 0x02, 0x03, 0x04, 0x05,
+//   0x01, 0x02, 0x03, 0x04, 0x05
+// };
 static gattCharCfg_t *heartRateMeasClientCharCfg;
 
 // Sensor Location Characteristic
 static uint8 heartRateSensLocProps = GATT_PROP_READ;
 static uint8 heartRateSensLoc = 0;
+
+// Heart Rate Value Characteristic
+static uint8 heartRateValueProps = GATT_PROP_READ;
+static uint8 heartRateValue[HEARTRATE_VALUE_LEN] = {0x02, 0x05, 0x0F};
 
 // Command Characteristic
 static uint8 heartRateCommandProps = GATT_PROP_WRITE;
@@ -204,7 +220,23 @@ static gattAttribute_t heartRateAttrTbl[] =
         GATT_PERMIT_WRITE, 
         0, 
         &heartRateCommand 
-      }
+      },
+
+     // Heart Rate Value Declaration
+    { 
+      { ATT_BT_UUID_SIZE, characterUUID },
+      GATT_PERMIT_READ, 
+      0,
+      &heartRateValueProps
+    },
+
+      // Heart Rate Value
+      { 
+        { ATT_BT_UUID_SIZE, heartRateValueUUID },
+        GATT_PERMIT_READ, 
+        0, 
+        (uint8 *)heartRateValue
+      },
 };
 
 
@@ -258,8 +290,7 @@ bStatus_t HeartRate_AddService(uint32 services)
   uint8 status;
 
   // Allocate Client Characteristic Configuration table
-  heartRateMeasClientCharCfg = (gattCharCfg_t *)ICall_malloc( sizeof(gattCharCfg_t) *
-                                                              linkDBNumConns );
+  heartRateMeasClientCharCfg = (gattCharCfg_t *)ICall_malloc( sizeof(gattCharCfg_t) * linkDBNumConns );
   if ( heartRateMeasClientCharCfg == NULL )
   {
     return ( bleMemAllocError );
@@ -326,6 +357,11 @@ bStatus_t HeartRate_SetParameter(uint8 param, uint8 len, void *value)
       heartRateSensLoc = *((uint8*)value);
       break;
 
+    case HEARTRATE_VALUE:
+      memset(heartRateValue, 0, HEARTRATE_VALUE_LEN+1);
+      memcpy(heartRateValue, value, len);
+      break;
+
     default:
       ret = INVALIDPARAMETER;
       break;
@@ -365,6 +401,10 @@ bStatus_t HeartRate_GetParameter(uint8 param, void *value)
       *((uint8*)value) = heartRateCommand;
       break;  
 
+    case HEARTRATE_VALUE:
+      memcpy(value, heartRateValue, sizeof(heartRateValue));
+      break;  
+
     default:
       ret = INVALIDPARAMETER;
       break;
@@ -386,8 +426,7 @@ bStatus_t HeartRate_GetParameter(uint8 param, void *value)
  */
 bStatus_t HeartRate_MeasNotify(uint16 connHandle, attHandleValueNoti_t *pNoti)
 {
-  uint16 value = GATTServApp_ReadCharCfg(connHandle, 
-                                         heartRateMeasClientCharCfg);
+  uint16 value = GATTServApp_ReadCharCfg(connHandle, heartRateMeasClientCharCfg);
 
   // If notifications enabled
   if (value & GATT_CLIENT_CFG_NOTIFY)
@@ -429,19 +468,43 @@ static bStatus_t heartRate_ReadAttrCB(uint16_t connHandle,
   {
     return (ATT_ERR_ATTR_NOT_LONG);
   }
- 
-  uint16 uuid = BUILD_UINT16(pAttr->type.uuid[0], pAttr->type.uuid[1]);
-
-  if (uuid == BODY_SENSOR_LOC_UUID)
+  if ( pAttr->type.len == ATT_BT_UUID_SIZE )
   {
-    *pLen = 1;
-    pValue[0] = *pAttr->pValue;
-  }
-  else
-  {
-    status = ATT_ERR_ATTR_NOT_FOUND;
-  }
+    uint16 uuid = BUILD_UINT16(pAttr->type.uuid[0], pAttr->type.uuid[1]);
 
+    switch ( uuid )
+    {
+      case HEARTRATE_VALUE_UUID:
+       uint8 len = sizeof(heartRateValue);
+        // verify offset
+        if (offset > len)
+        {
+          status = ATT_ERR_INVALID_OFFSET;
+        }
+        else
+        {
+          // determine read length (exclude null terminating character)
+          *pLen = MIN(maxLen, (len - offset));
+          // copy data
+          memcpy(pValue, &(pAttr->pValue[offset]), *pLen);
+        }
+        break;
+
+      case BODY_SENSOR_LOC_UUID:
+        *pLen = 1;
+        pValue[0] = *pAttr->pValue;
+        break;
+
+      default:
+        *pLen = 0;
+          status = ATT_ERR_ATTR_NOT_FOUND;
+          break;
+    }
+  } else {
+    // 128-bit UUID
+    *pLen = 0;
+    status = ATT_ERR_INVALID_HANDLE;
+  }
   return (status);
 }
 
