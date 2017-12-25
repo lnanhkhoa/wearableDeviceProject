@@ -181,8 +181,6 @@ class BleComponent extends Component {
 
       return true
     })
-
-    // Handle values for Smartwatch
   }
 
   componentDidUpdate(preProps){

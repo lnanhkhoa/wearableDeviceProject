@@ -32,7 +32,7 @@ class Home extends Component {
 					</View>
 					<View style={{ marginBottom: 80 }}>
 						<Button
-							style={{ backgroundColor: "#6FAF98", alignSelf: "center" }}
+							style={styles.button}
 							onPress={() => this.props.navigation.navigate("ConnectDevice")}
 						>
 							<Text>Lets Start!</Text>

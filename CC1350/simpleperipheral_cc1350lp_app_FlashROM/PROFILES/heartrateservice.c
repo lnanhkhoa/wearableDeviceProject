@@ -83,13 +83,14 @@ CONST uint8 heartRateServUUID[ATT_BT_UUID_SIZE] =
   LO_UINT16(HEARTRATE_SERV_UUID), HI_UINT16(HEARTRATE_SERV_UUID)
 };
 
-// Heart rate measurement characteristic
-CONST uint8 heartRateMeasUUID[ATT_BT_UUID_SIZE] =
+
+// Heart rate instead measurement characteristic
+CONST uint8 heartRateMeasureUUID[ATT_BT_UUID_SIZE] =
 { 
-  LO_UINT16(HEARTRATE_MEAS_UUID), HI_UINT16(HEARTRATE_MEAS_UUID)
+  LO_UINT16(HEARTRATE_MEASURE_UUID), HI_UINT16(HEARTRATE_MEASURE_UUID)
 };
 
-// Heart rate measurement characteristic
+// Heart rate value measurement characteristic
 CONST uint8 heartRateValueUUID[ATT_BT_UUID_SIZE] =
 { 
   LO_UINT16(HEARTRATE_VALUE_UUID), HI_UINT16(HEARTRATE_VALUE_UUID)
@@ -129,20 +130,23 @@ static heartRateServiceCB_t heartRateServiceCB;
 static CONST gattAttrType_t heartRateService = {ATT_BT_UUID_SIZE, 
                                                 heartRateServUUID};
 
-// Heart Rate Measurement Characteristic
-// Note characteristic value is not stored here
-static uint8 heartRateMeasProps = GATT_PROP_NOTIFY;
-static uint8 heartRateMeas = 0;
 // static uint8 heartRateMeas[HEARTRATE_VALUE_MEASUREMENT_LEN] = {
 //   0x02, 0x05, 0x05, 
 //   0x01, 0x02, 0x03, 0x04, 0x05,
 //   0x01, 0x02, 0x03, 0x04, 0x05
 // };
-static gattCharCfg_t *heartRateMeasClientCharCfg;
 
 // Sensor Location Characteristic
 static uint8 heartRateSensLocProps = GATT_PROP_READ;
 static uint8 heartRateSensLoc = 0;
+
+static uint8 heartRateMeasureProps = GATT_PROP_NOTIFY;
+static uint8 heartRateMeasure[HEARTRATE_VALUE_MEASUREMENT_LEN] = {
+  0x02, 0x05, 0x05, 
+  0x01, 0x02, 0x03, 0x04, 0x05,
+  0x01, 0x02, 0x03, 0x04, 0x05
+};
+static gattCharCfg_t *heartRateMeasureClientCharCfg;
 
 // Heart Rate Value Characteristic
 static uint8 heartRateValueProps = GATT_PROP_READ;
@@ -165,30 +169,6 @@ static gattAttribute_t heartRateAttrTbl[] =
     0,                                        /* handle */
     (uint8 *)&heartRateService                /* pValue */
   },
-
-    // Heart Rate Measurement Declaration
-    { 
-      { ATT_BT_UUID_SIZE, characterUUID },
-      GATT_PERMIT_READ, 
-      0,
-      &heartRateMeasProps 
-    },
-
-      // Heart Rate Measurement Value
-      { 
-        { ATT_BT_UUID_SIZE, heartRateMeasUUID },
-        0, 
-        0, 
-        &heartRateMeas 
-      },
-
-      // Heart Rate Measurement Client Characteristic Configuration
-      { 
-        { ATT_BT_UUID_SIZE, clientCharCfgUUID },
-        GATT_PERMIT_READ | GATT_PERMIT_WRITE, 
-        0, 
-        (uint8 *) &heartRateMeasClientCharCfg 
-      },      
 
     // Sensor Location Declaration
     { 
@@ -237,6 +217,31 @@ static gattAttribute_t heartRateAttrTbl[] =
         0, 
         (uint8 *)heartRateValue
       },
+
+    // Heart Rate Measurement Declaration
+    { 
+      { ATT_BT_UUID_SIZE, characterUUID },
+      GATT_PERMIT_READ, 
+      0,
+      &heartRateMeasureProps 
+    },
+
+      // Heart Rate Measurement Value
+      { 
+        { ATT_BT_UUID_SIZE, heartRateMeasureUUID },
+        0, 
+        0, 
+        (uint8 *)heartRateMeasure
+      },
+
+      // Heart Rate Measurement Client Characteristic Configuration
+      { 
+        { ATT_BT_UUID_SIZE, clientCharCfgUUID },
+        GATT_PERMIT_READ | GATT_PERMIT_WRITE, 
+        0, 
+        (uint8 *) &heartRateMeasureClientCharCfg 
+      },      
+
 };
 
 
@@ -290,14 +295,14 @@ bStatus_t HeartRate_AddService(uint32 services)
   uint8 status;
 
   // Allocate Client Characteristic Configuration table
-  heartRateMeasClientCharCfg = (gattCharCfg_t *)ICall_malloc( sizeof(gattCharCfg_t) * linkDBNumConns );
-  if ( heartRateMeasClientCharCfg == NULL )
+  heartRateMeasureClientCharCfg = (gattCharCfg_t *)ICall_malloc( sizeof(gattCharCfg_t) * linkDBNumConns );
+  if ( heartRateMeasureClientCharCfg == NULL )
   {
     return ( bleMemAllocError );
   }
   
   // Initialize Client Characteristic Configuration attributes.
-  GATTServApp_InitCharCfg(INVALID_CONNHANDLE, heartRateMeasClientCharCfg);
+  GATTServApp_InitCharCfg(INVALID_CONNHANDLE, heartRateMeasureClientCharCfg);
 
   if (services & HEARTRATE_SERVICE)
   {
@@ -348,7 +353,7 @@ bStatus_t HeartRate_SetParameter(uint8 param, uint8 len, void *value)
   bStatus_t ret = SUCCESS;
   switch (param)
   {
-     case HEARTRATE_MEAS_CHAR_CFG:
+     case HEARTRATE_MEASURE_CHAR_CFG:
       // Need connection handle
       //heartRateMeasClientCharCfg.value = *((uint16*)value);
       break;      
@@ -360,6 +365,21 @@ bStatus_t HeartRate_SetParameter(uint8 param, uint8 len, void *value)
     case HEARTRATE_VALUE:
       memset(heartRateValue, 0, HEARTRATE_VALUE_LEN+1);
       memcpy(heartRateValue, value, len);
+      break;
+
+    case HEARTRATE_MEASURE:
+      if ( len <=  HEARTRATE_VALUE_MEASUREMENT_LEN)
+      {
+        memset(heartRateMeasure, 0, HEARTRATE_VALUE_MEASUREMENT_LEN+1);
+        memcpy(heartRateMeasure, value, len);
+
+        // See if Notification has been enabled
+        GATTServApp_ProcessCharCfg( heartRateMeasureClientCharCfg, &heartRateMeasure, FALSE,
+                                    heartRateAttrTbl, GATT_NUM_ATTRS( heartRateAttrTbl ),
+                                    INVALID_TASK_ID, heartRate_ReadAttrCB );
+      } else {
+        ret = bleInvalidRange;
+      }
       break;
 
     default:
@@ -388,7 +408,7 @@ bStatus_t HeartRate_GetParameter(uint8 param, void *value)
   bStatus_t ret = SUCCESS;
   switch (param)
   {
-    case HEARTRATE_MEAS_CHAR_CFG:
+    case HEARTRATE_MEASURE_CHAR_CFG:
       // Need connection handle
       //*((uint16*)value) = heartRateMeasClientCharCfg.value;
       break;      
@@ -403,8 +423,11 @@ bStatus_t HeartRate_GetParameter(uint8 param, void *value)
 
     case HEARTRATE_VALUE:
       memcpy(value, heartRateValue, sizeof(heartRateValue));
-      break;  
+      break;
 
+    case HEARTRATE_MEASURE:
+      memcpy(value, heartRateMeasure, sizeof(heartRateMeasure));
+      break;
     default:
       ret = INVALIDPARAMETER;
       break;
@@ -426,16 +449,16 @@ bStatus_t HeartRate_GetParameter(uint8 param, void *value)
  */
 bStatus_t HeartRate_MeasNotify(uint16 connHandle, attHandleValueNoti_t *pNoti)
 {
-  uint16 value = GATTServApp_ReadCharCfg(connHandle, heartRateMeasClientCharCfg);
+  // uint16 value = GATTServApp_ReadCharCfg(connHandle, heartRateMeasClientCharCfg);
 
   // If notifications enabled
-  if (value & GATT_CLIENT_CFG_NOTIFY)
+  // if (value & GATT_CLIENT_CFG_NOTIFY)
   {
     // Set the handle.
-    pNoti->handle = heartRateAttrTbl[HEARTRATE_MEAS_VALUE_POS].handle;
+    // pNoti->handle = heartRateAttrTbl[HEARTRATE_MEAS_VALUE_POS].handle;
   
     // Send the notification.
-    return GATT_Notification(connHandle, pNoti, FALSE);
+    // return GATT_Notification(connHandle, pNoti, FALSE);
   }
 
   return bleIncorrectMode;
@@ -475,24 +498,43 @@ static bStatus_t heartRate_ReadAttrCB(uint16_t connHandle,
     switch ( uuid )
     {
       case HEARTRATE_VALUE_UUID:
-       uint8 len = sizeof(heartRateValue);
-        // verify offset
-        if (offset > len)
         {
-          status = ATT_ERR_INVALID_OFFSET;
-        }
-        else
-        {
-          // determine read length (exclude null terminating character)
-          *pLen = MIN(maxLen, (len - offset));
-          // copy data
-          memcpy(pValue, &(pAttr->pValue[offset]), *pLen);
+          uint8 len = sizeof(heartRateValue);
+          // verify offset
+          if (offset > len)
+          {
+            status = ATT_ERR_INVALID_OFFSET;
+          }
+          else
+          {
+            // determine read length (exclude null terminating character)
+            *pLen = MIN(maxLen, (len - offset));
+            // copy data
+            memcpy(pValue, &(pAttr->pValue[offset]), *pLen);
+          }
         }
         break;
 
       case BODY_SENSOR_LOC_UUID:
         *pLen = 1;
         pValue[0] = *pAttr->pValue;
+        break;
+      case HEARTRATE_MEASURE_UUID:
+        {  
+          uint8 len = sizeof(heartRateMeasure);
+          // verify offset
+          if (offset > len)
+          {
+            status = ATT_ERR_INVALID_OFFSET;
+          }
+          else
+          {
+            // determine read length (exclude null terminating character)
+            *pLen = MIN(maxLen, (len - offset));
+            // copy data
+            memcpy(pValue, &(pAttr->pValue[offset]), *pLen);
+          }
+        }
         break;
 
       default:

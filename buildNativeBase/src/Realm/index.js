@@ -1,63 +1,27 @@
 const Realm = require('realm')
-const objectRealm = require('./SchemaObjects').objectRealm
+const {objectRealm, PersonSchema, HRMeasurementSchema, PedoMeasurementSchema, 
+  InstanceHeartRateSchema, InstanceSpO2Schema } = require('./SchemaObjects')
 const Utils = require('./Utils');
 
-const PersonSchema = {
-  name: 'Person',
-  properties: {
-    realName:    'string', 
-    displayName: 'string?',
-    updatedAt:    {type: 'date', optional: true}, 
-  }
-};
-
-const MeasurementSchema = {
-  name: 'Measurement',
-  properties: {
-    id:           {type: 'string'},
-    stepsCount:     {type: 'int'},
-    distance:     {type: 'int'},
-    caloriesBurn:   {type: 'int'},
-    heartRate:  {type: 'int'},
-    spO2:       {type: 'int'},
-    bloodPressure:  {type: 'int'},
-    updatedAt:    {type: 'date', indexed: true}
-  }
-};
-
-const InstanceHeartRateSchema = {
-  name: 'Instance_HeartRate',
-  properties: {
-    id: {type: 'string'},
-    value: {type: 'int'},
-    updatedAt: {type: 'date', indexed: true}
-  }
-}
-const InstanceStepCountSchema = {
-  name: 'Instance_StepCount',
-  properties: {
-    id: {type: 'string'},
-    value: {type: 'int'},
-    updatedAt: {type: 'date', indexed: true}
-  }
-}
-
-const realm = new Realm({schema: [
-  PersonSchema, 
-  MeasurementSchema, 
-  InstanceHeartRateSchema, 
-  InstanceStepCountSchema]
+const realm = new Realm({
+  schema: [
+    PersonSchema, 
+    HRMeasurementSchema,
+    PedoMeasurementSchema,
+    InstanceHeartRateSchema, 
+    InstanceSpO2Schema
+  ]
 });
 
 let realmMeasureService = {
-  findAll: function(sortBy){
+  findAll: function(name:string, sortBy){
     if (!sortBy) sortBy = [['updatedAt', true]];
-    let realmAllObject = realm.objects('Measurement').sorted(sortBy);
+    let realmAllObject = realm.objects(name).sorted(sortBy);
     return realmAllObject.slice(0, realmAllObject.length);
   },
-  findWithLimit: function(limit){
+  findWithLimit: function(name:string, limit: number){
     let sortBy = [['updatedAt', true]];
-    let realmAllObject = realm.objects('Measurement').sorted(sortBy);
+    let realmAllObject = realm.objects(name).sorted(sortBy);
     return realmAllObject.slice(0, limit);    
   },
   findInstanceLimit: function(name: string, limit: number){
@@ -65,32 +29,48 @@ let realmMeasureService = {
     let realmAllObject = realm.objects(name).sorted(sortBy);
     return realmAllObject.slice(0, limit);    
   },
-  query: function(stringQuery){
+  query: function(name:string, stringQuery){
     let sortBy = [['updatedAt', true]];
-    let realmAllObject = realm.objects('Measurement').filtered(stringQuery).sorted(sortBy);
+    let realmAllObject = realm.objects(name).filtered(stringQuery).sorted(sortBy);
     return realmAllObject.slice(0,realmAllObject.length);
   },
-  save: function(file) {
+  save: function(name:string, obj) { // auto add {id,updateAt}
+    let file = objectRealm.createObject(obj)
     realm.write(() => {
-      realm.create('Measurement', file);
+      realm.create(name, file);
     })
   },
-  saveInstance: function(name: string, value: number){
+  saveInstance: function(name: string, value: number, ){
     let file = objectRealm.createInstance(value);
     realm.write(() => {
       realm.create(name, file);
     })
   },
-  deleteAllInstance: function(){
-    realm.write(()=>{
-      let Instance_HeartRate = realm.objects('Instance_HeartRate');
-      realm.delete(Instance_HeartRate);
-      let Instance_StepCount = realm.objects('Instance_StepCount');
-      realm.delete(Instance_StepCount);
+  insertInstance: function(name: string, value: number ){
+    let file = objectRealm.createInstance(value);
+    realm.write(() => {
+      realm.create(name, file);
     })
   },
-  saveRandomData: function(){
-    let lastDate = realm.objects('Measurement').sorted([['updatedAt', true]])[0].updatedAt
+  insertManyInstance: function(name:string, array){
+    let file = null;
+    realm.write(()=>{
+      array.forEach(function(arr){
+        file = objectRealm.createInstance(arr);
+        realm.create(name, file);
+      })
+    })
+  },
+  deleteAllInstance: function(){
+    realm.write(()=>{
+      let InstanceHeartRate = realm.objects('InstanceHeartRate').filtered("id != '0'");
+      realm.delete(InstanceHeartRate);
+      let InstanceSpO2 = realm.objects('InstanceSpO2').filtered("id != '0'");
+      realm.delete(InstanceSpO2);
+    })
+  },
+  saveRandomData: function(name:string){
+    let lastDate = realm.objects(name).sorted([['updatedAt', true]])[0].updatedAt
     this.save(objectRealm.createNewDataSensor(Utils.createRandomData()))
   },
   update: function(todo, callback) {
@@ -101,7 +81,4 @@ let realmMeasureService = {
     });
   }
 }
-
-// realmMeasureService.deleteAllInstance()
-
 module.exports.realmMeasureService = realmMeasureService;

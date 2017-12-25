@@ -19,7 +19,7 @@ import {
   Separator,
   List
 } from "native-base";
-import styles from "./styles";
+import styles, {primaryColor} from "./styles";
 import { connect } from '../../../Redux/'
 
 const group1 = [
@@ -200,7 +200,10 @@ class Settings extends Component {
   render() {
     return(
       <Container style={styles.container}>
-        <Header>
+        <Header hasTabs 
+          style={styles.header}
+          androidStatusBarColor={primaryColor}
+        >
           <Left>
             <Button transparent onPress={() => this.props.navigation.navigate("DrawerOpen")}>
               <Icon name="menu" />
@@ -209,7 +212,6 @@ class Settings extends Component {
           <Body>
             <Title>Settings</Title>
           </Body>
-          <Right />
         </Header>
         <Content>
           <Separator bordered noTopBorder />

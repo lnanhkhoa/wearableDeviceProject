@@ -4,7 +4,7 @@ import {
   Container,Header, Title, Content, Button, Icon, List, 
   ListItem, Text, Thumbnail, Left, Right, Body, Toast } from "native-base"
 import { View, BackHandler, TouchableOpacity} from 'react-native'
-import styles from "./styles"
+import styles, {primaryColor} from "./styles"
 import {connect, ble } from '../../../Redux/'
 import { Buffer } from 'buffer'
 import { realmMeasureService } from '../../../Realm/'
@@ -38,7 +38,7 @@ class Information extends Component{
     console.log(this.props.dispatch)
     if(this.props.navigation.state.routeName !== 'Information' ) {
       Toast.show({
-      text:'Deo phai',
+      text:'Meo phai',
       duration: 1000,
       textStyle:{
         textAlign: 'center'
@@ -65,8 +65,8 @@ class Information extends Component{
   }
 
   componentWillReceiveProps(newProps){
-    realmMeasureDataLimit = realmMeasureService.findWithLimit(50)
-    realmInstanceDataLimit= realmMeasureService.findInstanceLimit('Instance_HeartRate', 1)
+    realmMeasureDataLimit = realmMeasureService.findWithLimit('HeartRateMeasurement', 50)
+    realmInstanceDataLimit= realmMeasureService.findInstanceLimit('InstanceHeartRate', 1)
     mount+=1
   }
 
@@ -112,7 +112,10 @@ class Information extends Component{
     mount +=1
 		return (
 			<Container style={styles.container}>
-        <Header>
+        <Header hasTabs 
+          style={styles.header}
+          androidStatusBarColor={primaryColor}
+        >
           <Left>
             <Button transparent 
             	onPress={() => this.props.navigation.navigate("DrawerOpen")}
@@ -127,7 +130,6 @@ class Information extends Component{
         </Header>
         <Content>
         	<View style={{flexDirection:'row'}}>
-          <Text>{mount}</Text>
         	<View style={{flex:1,}}>
               <Text style={{textAlign : 'center'}}>Số bước chân gần nhất</Text>
               <Text style={{textAlign : 'center'}}>{this.getRealmMeasure('stepsCount', 0)[0] |0 }</Text>

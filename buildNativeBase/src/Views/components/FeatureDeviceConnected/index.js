@@ -2,7 +2,7 @@
 import React, { Component } from 'react'
 import { View } from 'react-native'
 import {Container, Content, Header, Left, Body, Right, Title, Button, Icon, List, ListItem, Text} from 'native-base'
-import styles from "./styles";
+import styles, {primaryColor} from "./styles";
 import { connect, ble } from '../../../Redux/'
 import { realmMeasureService } from '../../../Realm/'
 
@@ -21,7 +21,9 @@ class FeatureDeviceConnected extends Component {
 	render() {
 		return (
 			<Container style={styles.container}>
-        <Header>
+        <Header hasTabs
+          style={styles.header}
+          androidStatusBarColor={primaryColor}>
           <Left>
             <Button transparent onPress={() => this.props.navigation.goBack()}>
               <Icon name="arrow-back" />
@@ -30,13 +32,16 @@ class FeatureDeviceConnected extends Component {
           <Body>
             <Title>Feature Device Connected</Title>
           </Body>
-          <Right />
+          
         </Header>
         <Content>
         	<List>
         		<ListItem onPress={this._onPressButtonDisconnectDevice}>
-      				<Text>Disconnect Current Device</Text>
+      				<Text>Clear Cache</Text>
         		</ListItem>
+            <ListItem onPress={this._onPressButtonDisconnectDevice}>
+              <Text>Disconnect Current Device</Text>
+            </ListItem>
         	</List>
         </Content>
       </Container>

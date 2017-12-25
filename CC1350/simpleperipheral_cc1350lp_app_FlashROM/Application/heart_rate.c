@@ -78,6 +78,7 @@
 #endif // USE_CORE_SDK
 #include "board_key.h"
 #include "board.h"
+#include "middleComunication.h"
 
 #include "heart_rate.h"
 
@@ -135,6 +136,9 @@
 // How often to perform periodic event (in msec)
 #define SBP_PERIODIC_EVT_PERIOD                         5000
 
+// How often to perform periodic event (in msec)
+#define PEDOMETER_PERIODIC_EVT_PERIOD                   1000
+
 
 // Arbitrary values used to simulate measurements.
 #define HEARTRATE_BPM_DEFAULT                           73
@@ -157,7 +161,7 @@
 
 // Battery Event.
 #define HEARTRATE_ACC_EVT                               (uint16_t)(1 << 4)
-#define HEARTRATE_BATT_PERIODIC_EVT                  (uint16_t)(1 << 5)
+#define HEARTRATE_BATT_PERIODIC_EVT                     (uint16_t)(1 << 5)
 
 // Key Press events.
 #define HEARTRATE_KEY_CHANGE_EVT                        (uint16_t)(1 << 6)
@@ -167,7 +171,7 @@
 
 #define SBP_CHAR_CHANGE_EVT                             (uint16_t)(1 << 8)
 #define SBP_PERIODIC_EVT                                (uint16_t)(1 << 9)
-#define PEDO_CHAR_CHANGE_EVT                             (uint16_t)(1 << 10)
+#define PEDO_CHAR_CHANGE_EVT                            (uint16_t)(1 << 10)
 
 #define HEARTRATE_MEAS_LEN                              9
 #define HEARTRATE_RAWMEAS_LEN                           9
@@ -212,6 +216,7 @@ static Clock_Struct measPerClock;
 static Clock_Struct rawMeasPerClock;
 static Clock_Struct battPerClock;
 static Clock_Struct periodicClock;
+static Clock_Struct pedometerClock;
 
 // Queue object used for app messages
 static Queue_Struct appMsg;
@@ -332,7 +337,9 @@ static void HeartRate_stateChangeEvt(gaprole_States_t pEvent);
 
 static void SimpleBLEPeripheral_processCharValueChangeEvt(uint8_t paramID);
 static void SimpleBLEPeripheral_performPeriodicTask(void);
+static void Pedometer_performPeriodicTask(void);
 static void SimpleBLEPeripheral_charValueChangeCB(uint8_t paramID);
+static void Pedometer_pedometerCB(uint8_t paramID);
 
 /*********************************************************************
  * PROFILE CALLBACKS
@@ -356,10 +363,10 @@ static simpleProfileCBs_t SimpleBLEPeripheral_simpleProfileCBs =
   SimpleBLEPeripheral_charValueChangeCB // Characteristic value change callback
 };
 
-//static pedometerCBs_t Pedometer_pedometerCBs =
-//{
-//  Pedometer_pedometerCB // Characteristic value change callback
-//};
+static pedometerCBs_t Pedometer_pedometerCBs =
+{
+ Pedometer_pedometerCB // Characteristic value change callback
+};
 
 /*********************************************************************
  * PUBLIC FUNCTIONS
@@ -436,6 +443,10 @@ void HeartRate_init(void)
                       SBP_PERIODIC_EVT_PERIOD, 0, false, 
                       SBP_PERIODIC_EVT);
 
+  Util_constructClock(&pedometerClock, HeartRate_clockHandler,
+                      PEDOMETER_PERIODIC_EVT_PERIOD, 0, false, 
+                      PEDO_CHAR_CHANGE_EVT);
+
   // dispHandle = Display_open(Display_Type_LCD, NULL);
   // Setup the GAP Peripheral Role Profile.
   {
@@ -502,6 +513,10 @@ void HeartRate_init(void)
 
   // Add device info service.
   DevInfo_AddService();
+  {
+    uint8_t devInfoMfrName[DEVINFO_STR_ATTR_LEN+1] = "MEMSTECH";
+    DevInfo_SetParameter(DEVINFO_MANUFACTURER_NAME, DEVINFO_STR_ATTR_LEN, devInfoMfrName);
+  }
   // Add heart rate service.
   HeartRate_AddService(GATT_ALL_SERVICES);
   // Add battery service.
@@ -549,8 +564,8 @@ void HeartRate_init(void)
 
   // Setup Pedometer Characteristic Values.
   {
-    uint16_t charValue = 0x0001;
-     Pedometer_SetParameter(Pedometer_CHAR1, sizeof (uint16_t), &charValue);
+    // uint16_t charValue = 60;
+    //  Pedometer_SetParameter(PEDOMETER_CHAR1, sizeof (uint16_t), &charValue);
    }
 
   // Register for Heart Rate service callback.
@@ -563,7 +578,7 @@ void HeartRate_init(void)
   SimpleProfile_RegisterAppCBs(&SimpleBLEPeripheral_simpleProfileCBs);
 
   // Register for Simple Profile service callback.
-  // Pedometer_RegisterAppCBs(&SimpleBLEPeripheral_simpleProfileCBs);
+  Pedometer_RegisterAppCBs(&Pedometer_pedometerCBs);
 
   // Start the Device.
   GAPRole_StartDevice(&heartRatePeripheralCB);
@@ -657,6 +672,15 @@ static void HeartRate_taskFxn(UArg a0, UArg a1)
       SimpleBLEPeripheral_performPeriodicTask();
     }
 
+    if (events & PEDO_CHAR_CHANGE_EVT)
+    {
+      events &= ~PEDO_CHAR_CHANGE_EVT;
+
+      Util_startClock(&pedometerClock);
+      // Perform periodic application task
+      Pedometer_performPeriodicTask();
+    }
+
   }
 }
 
@@ -726,6 +750,10 @@ static void HeartRate_processAppMsg(heartRateEvt_t *pMsg)
       HeartRate_battEvt(pMsg->hdr.state);
 
     case SBP_CHAR_CHANGE_EVT:
+      SimpleBLEPeripheral_processCharValueChangeEvt(pMsg->hdr.state);
+      break;
+
+    case PEDO_CHAR_CHANGE_EVT:
       SimpleBLEPeripheral_processCharValueChangeEvt(pMsg->hdr.state);
       break;
 
@@ -829,59 +857,14 @@ static bool HeartRate_toggleAdvertising(void)
  */
 static void HeartRate_measNotify(void)
 {
-  attHandleValueNoti_t heartRateMeas;
+  // Change heart rate measurement
+  uint8_t *value = getHeartRateRawMeasurement();
+  HeartRate_SetParameter(HEARTRATE_MEASURE, 13, value);
 
-  heartRateMeas.pValue = GATT_bm_alloc(gapConnHandle, ATT_HANDLE_VALUE_NOTI, HEARTRATE_MEAS_LEN, NULL);
-  if (heartRateMeas.pValue != NULL)
-  {
-    uint8_t *p = heartRateMeas.pValue;
-    uint8_t flags = heartRateflags[flagsIdx];
+  // Change heart rate value 
+  uint8_t *value1 = getHeartRateValueMeasurement();
+  HeartRate_SetParameter(HEARTRATE_VALUE, 3, value1);
 
-    // Build heart rate measurement structure from simulated values.
-    *p++ = flags;
-    *p++ = heartRateBpm;
-    *p++ = heartRateBpm;
-    *p++ = heartRateBpm;
-    *p++ = heartRateBpm;
-    
-    if (flags & HEARTRATE_FLAGS_FORMAT_UINT16)
-    {
-      // Additional byte for 16 bit format.
-      *p++ = 0;
-    }
-
-    if (flags & HEARTRATE_FLAGS_ENERGY_EXP)
-    {
-      *p++ = LO_UINT16(heartRateEnergyLvl);
-      *p++ = HI_UINT16(heartRateEnergyLvl);
-    }
-
-    if (flags & HEARTRATE_FLAGS_RR)
-    {
-      *p++ = LO_UINT16(heartRateRrInterval);
-      *p++ = HI_UINT16(heartRateRrInterval);
-      *p++ = LO_UINT16(heartRateRrInterval2);
-      *p++ = HI_UINT16(heartRateRrInterval2);
-    }
-
-    heartRateMeas.len = (uint8)(p - heartRateMeas.pValue);
-
-    // Send notification.
-    if (HeartRate_MeasNotify(gapConnHandle, &heartRateMeas) != SUCCESS)
-    {
-      GATT_bm_free((gattMsg_t *)&heartRateMeas, ATT_HANDLE_VALUE_NOTI);
-    }
-
-//    Update simulated values.
-    // heartRateEnergyLvl += HEARTRATE_ENERGY_INCREMENT;
-    // if (++heartRateBpm == HEARTRATE_BPM_MAX)
-    // {
-    //   heartRateBpm = HEARTRATE_BPM_DEFAULT;
-    //     heartRateBpm += 1;
-    // }
-
-    // heartRateRrInterval = heartRateRrInterval2 = HEARTRATE_BPM2RR(heartRateBpm);
-  }
 }
 
 /*********************************************************************
@@ -920,17 +903,18 @@ static void HeartRate_stateChangeEvt(gaprole_States_t newState)
   if (newState == GAPROLE_CONNECTED)
   {
     Util_startClock(&periodicClock);
+    Util_startClock(&pedometerClock);
     // Get connection handle.
     GAPRole_GetParameter(GAPROLE_CONNHANDLE, &gapConnHandle);
   }
   // If disconnected
-  else if (gapProfileState == GAPROLE_CONNECTED &&
-           newState != GAPROLE_CONNECTED)
+  else if (gapProfileState == GAPROLE_CONNECTED && newState != GAPROLE_CONNECTED)
   {
     // Stop periodic measurement of heart rate.
     Util_stopClock(&measPerClock);
     Util_stopClock(&rawMeasPerClock);
     Util_stopClock(&periodicClock);
+    Util_stopClock(&pedometerClock);
 
     if (newState == GAPROLE_WAITING_AFTER_TIMEOUT)
     {
@@ -1258,6 +1242,21 @@ static void SimpleBLEPeripheral_performPeriodicTask(void)
 }
 
 
+/*********************************************************************
+ * @fn      Pedometer_performPeriodicTask
+ *
+ * @brief   
+ *
+ * @param   None.
+ *
+ * @return  None.
+ */
+static void Pedometer_performPeriodicTask(void)
+{
+  uint8_t *value = getPedometerValueMeasurement();
+  Pedometer_SetParameter(PEDOMETER_CHAR1, 3, value);
+}
+
 
 /*********************************************************************
  * @fn      HeartRate_enqueueMsg
@@ -1285,6 +1284,8 @@ static uint8_t HeartRate_enqueueMsg(uint8_t event, uint8_t state)
 
   return FALSE;
 }
+
+
 
 
 /*********************************************************************

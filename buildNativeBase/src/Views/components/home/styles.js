@@ -22,6 +22,10 @@ export default {
     width: 280,
     height: 100
   },
+  button:{ 
+    backgroundColor: "#27ae60", 
+    alignSelf: "center" 
+  },
   text: {
     color: "#D8D8D8",
     bottom: 6,

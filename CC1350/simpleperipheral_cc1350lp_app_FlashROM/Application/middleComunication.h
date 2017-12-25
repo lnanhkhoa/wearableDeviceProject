@@ -13,6 +13,7 @@ extern "C"
  * INCLUDES
  */
 
+#include <stdint.h>
 /*********************************************************************
  * CONSTANTS
  */
@@ -28,6 +29,24 @@ extern "C"
 /*
  * Task creation function for the Heart Rate.
  */
+
+void functionCreateRandomMeasurement(void);
+
+void functionCreateRandomValueMeasurement(void);
+
+void functionCreateRandomPedometerMeasurement(void);
+
+uint8_t* getHeartRate(void);
+
+uint8_t* getSpO2(void);
+
+uint8_t* createFrame(void);
+
+uint8_t* getHeartRateRawMeasurement(void);
+
+uint8_t* getHeartRateValueMeasurement(void);
+
+uint8_t* getPedometerValueMeasurement(void);
 
 
 /*********************************************************************

@@ -1,8 +1,8 @@
 /******************************************************************************
 
- @file  simple_gatt_profile.h
+ @file  scanparamservice.h
 
- @brief This file contains the Simple GATT profile definitions and prototypes
+ @brief This file contains the Scan Parameters Service definitions and
         prototypes.
 
  Group: WCS, BTS
@@ -10,7 +10,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2010-2016, Texas Instruments Incorporated
+ Copyright (c) 2011-2016, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -41,12 +41,12 @@
  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
  ******************************************************************************
- Release Name: ble_sdk_2_02_00_31
- Release Date: 2016-06-16 18:57:29
+ Release Name: ble_sdk_2_02_01_18
+ Release Date: 2016-10-26 15:20:04
  *****************************************************************************/
 
-#ifndef PEDOMETER_H
-#define PEDOMETER_H
+#ifndef SCANPARAMSERVICE_H
+#define SCANPARAMSERVICE_H
 
 #ifdef __cplusplus
 extern "C"
@@ -61,41 +61,24 @@ extern "C"
  * CONSTANTS
  */
 
-// Profile Parameters
-#define PEDOMETER_CHAR1                   0  // RW uint8 - Profile Characteristic 1 value 
-#define PEDOMETER_CHAR2                   1  // RW uint8 - Profile Characteristic 2 value
-#define PEDOMETER_CHAR3                   2  // RW uint8 - Profile Characteristic 3 value
-#define PEDOMETER_CHAR4                   3  // RW uint8 - Profile Characteristic 4 value
-#define PEDOMETER_CHAR5                   4  // RW uint8 - Profile Characteristic 4 value
-#define PEDOMETER_CHAR6                   5  // RW uint8 - Profile Characteristic 4 value
-  
-// Simple Profile Service UUID
-#define PEDOMETER_SERV_UUID               0xFFE0
-    
-// Key Pressed UUID
-#define PEDOMETER_CHAR1_UUID            0xFFE1
-#define PEDOMETER_CHAR2_UUID            0xFFE2
-#define PEDOMETER_CHAR3_UUID            0xFFE3
-#define PEDOMETER_CHAR4_UUID            0xFFE4
-#define PEDOMETER_CHAR5_UUID            0xFFE5
-#define PEDOMETER_CHAR6_UUID            0xFFE6
-  
-// Simple Keys Profile Services bit fields
-#define PEDOMETER_SERVICE               0x00000003
+// Scan Characteristic Lengths
+#define SCAN_INTERVAL_WINDOW_CHAR_LEN     4
+#define SCAN_PARAM_REFRESH_LEN            1
 
-// Length of Characteristic 1 in bytes
-#define PEDOMETER_CHAR1_LEN           3
-#define PEDOMETER_CHAR2_LEN           2
+// Scan Parameter Refresh Values
+#define SCAN_PARAM_REFRESH_REQ            0x00
 
+// Callback events
+#define SCAN_INTERVAL_WINDOW_SET          1
 
-// Length of Characteristic 5 in bytes
-#define PEDOMETER_CHAR5_LEN           5   
+// Get/Set parameters
+#define SCAN_PARAM_PARAM_INTERVAL         0
+#define SCAN_PARAM_PARAM_WINDOW           1
 
 /*********************************************************************
  * TYPEDEFS
  */
 
-  
 /*********************************************************************
  * MACROS
  */
@@ -104,61 +87,75 @@ extern "C"
  * Profile Callbacks
  */
 
-// Callback when a characteristic value has changed
-typedef void (*pedometerChange_t)( uint8 paramID );
-
-typedef struct
-{
-  pedometerChange_t        pfnPedometerChange;  // Called when characteristic value changes
-} pedometerCBs_t;
-
-    
+// Scan Parameters Service callback function
+typedef void (*scanParamServiceCB_t)(uint8 event);
 
 /*********************************************************************
  * API FUNCTIONS 
  */
 
-
-/*
- * Pedometer_AddService- Initializes the Simple GATT Profile service by registering
+/*********************************************************************
+ * @fn      ScanParam_AddService
+ *
+ * @brief   Initializes the Service by registering
  *          GATT attributes with the GATT server.
  *
- * @param   services - services to add. This is a bit map and can
- *                     contain more than one service.
+ * @return  Success or Failure
  */
+extern bStatus_t ScanParam_AddService(void);
 
-extern bStatus_t Pedometer_AddService( uint32 services );
-
-/*
- * Pedometer_RegisterAppCBs - Registers the application callback function.
- *                    Only call this function once.
+/*********************************************************************
+ * @fn      ScanParam_Register
  *
- *    appCallbacks - pointer to application callbacks.
+ * @brief   Register a callback function with the Scan Parameters Service.
+ *
+ * @param   pfnServiceCB - Callback function.
+ *
+ * @return  None.
  */
-extern bStatus_t Pedometer_RegisterAppCBs( pedometerCBs_t *appCallbacks );
+extern void ScanParam_Register(scanParamServiceCB_t pfnServiceCB);
 
-/*
- * Pedometer_SetParameter - Set a Simple GATT Profile parameter.
+/*********************************************************************
+ * @fn      ScanParam_SetParameter
  *
- *    param - Profile parameter ID
- *    len - length of data to right
- *    value - pointer to data to write.  This is dependent on
+ * @brief   Set a Scan Parameters Service parameter.
+ *
+ * @param   param - Profile parameter ID
+ * @param   len - length of data to right
+ * @param   value - pointer to data to write.  This is dependent on
  *          the parameter ID and WILL be cast to the appropriate 
  *          data type (example: data type of uint16 will be cast to 
  *          uint16 pointer).
+ *
+ * @return  bStatus_t
  */
-extern bStatus_t Pedometer_SetParameter( uint8 param, uint8 len, void *value );
+extern bStatus_t ScanParam_SetParameter(uint8 param, uint8 len, void *value);
   
-/*
- * Pedometer_GetParameter - Get a Simple GATT Profile parameter.
+/*********************************************************************
+ * @fn      ScanParam_GetParameter
  *
- *    param - Profile parameter ID
- *    value - pointer to data to write.  This is dependent on
+ * @brief   Get a Scan Parameters Service parameter.
+ *
+ * @param   param - Profile parameter ID
+ * @param   value - pointer to data to get.  This is dependent on
  *          the parameter ID and WILL be cast to the appropriate 
  *          data type (example: data type of uint16 will be cast to 
  *          uint16 pointer).
+ *
+ * @return  bStatus_t
  */
-extern bStatus_t Pedometer_GetParameter( uint8 param, void *value );
+extern bStatus_t ScanParam_GetParameter(uint8 param, void *value);
+
+/*********************************************************************
+ * @fn      ScanParam_RefreshNotify
+ *
+ * @brief   Notify the peer to refresh the scan parameters.
+ *
+ * @param   connHandle - connection handle
+ *
+ * @return  None
+ */
+extern void ScanParam_RefreshNotify(uint16 connHandle);
 
 
 /*********************************************************************
@@ -168,4 +165,4 @@ extern bStatus_t Pedometer_GetParameter( uint8 param, void *value );
 }
 #endif
 
-#endif /* PEDOMETER_H */
+#endif /* SCANPARAMSERVICE_H */

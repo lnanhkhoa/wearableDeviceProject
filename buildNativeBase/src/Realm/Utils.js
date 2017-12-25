@@ -2,6 +2,7 @@
 
 
 var currentDate = new Date(2017,0,1)
+
 let Utils = {
   increaseDate: function(currentDate){
     if(currentDate instanceof Date && !isNaN(currentDate.valueOf())){
@@ -28,7 +29,6 @@ let Utils = {
     return array.splice(toIndex, 0, array.splice(fromIndex, 1)[0]);
   },
 }
-
 module.exports = Utils;
 
 

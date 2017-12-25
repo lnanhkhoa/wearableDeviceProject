@@ -56,7 +56,7 @@ export class LineChart extends Component {
   
   render() {
     return (
-      <ScrollView scrollEnabled={this.state.scrollEnabled} style={{backgroundColor: "#bdc3c7"}}>
+      <ScrollView scrollEnabled={this.state.scrollEnabled} style={{backgroundColor: "white"}}>
         <VictoryChart
           containerComponent={
             <VictoryContainer
@@ -64,11 +64,10 @@ export class LineChart extends Component {
               onTouchEnd={() => this.setState({ scrollEnabled: true })}
             />
           }
-          padding={{left: 10, right:2, top:20, bottom:20}}
-          height={160}
+          padding={{left: 10, right:2, top:20}}
+          height={140}
         >
-          <VictoryLine data={this.props.data} style={{ data: {stroke: "#439CBB", strokeWidth: 4}}}
-          />
+          <VictoryLine data={this.props.data} style={{ data: {stroke: "#2980b9", strokeWidth: 4}}} />
           <VictoryAxis
             style={{
               axis: {stroke: "none"},

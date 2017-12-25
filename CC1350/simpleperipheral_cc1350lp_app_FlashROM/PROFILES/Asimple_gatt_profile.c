@@ -146,10 +146,10 @@ static CONST gattAttrType_t simpleProfileService = { ATT_BT_UUID_SIZE, simplePro
 static uint8 simpleProfileChar1Props = GATT_PROP_READ | GATT_PROP_WRITE;
 
 // Characteristic 1 Value
-static uint8 simpleProfileChar1[SIMPLEPROFILE_CHAR1_LEN] = {0x01, 0x23, 0x45, 0x67, 0x89};
+static uint8 simpleProfileChar1[SIMPLEPROFILE_CHAR1_LEN] = {0x01, 0x23, 0x45, 0x67, 0x89, 0x01, 0x20}; // ss, mm, hh, DD, MM, YY, CC
 
 // Simple Profile Characteristic 1 User Description
-static uint8 simpleProfileChar1UserDesp[17] = "Characteristic 1";
+static uint8 simpleProfileChar1UserDesp[17] = "DateTime";
 
 
 // Simple Profile Characteristic 2 Properties

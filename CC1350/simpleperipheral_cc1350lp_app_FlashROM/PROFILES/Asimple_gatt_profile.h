@@ -84,7 +84,7 @@ extern "C"
 #define SIMPLEPROFILE_SERVICE               0x00000002
 
 // Length of Characteristic 1 in bytes
-#define SIMPLEPROFILE_CHAR1_LEN           5
+#define SIMPLEPROFILE_CHAR1_LEN           7
 
 
 // Length of Characteristic 5 in bytes

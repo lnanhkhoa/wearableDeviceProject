@@ -16,3 +16,8 @@ export const ROOT_SCENE = 'ROOT_SCENE';
 export const ANOTHER_SCENE = 'ANOTHER_SCENE';
 // export const ROOT_SCENE = 'ROOT_SCENE';
 
+export const TYPE_OBJECTS = [
+	'HeartRateMeasurement', 
+	'PedometerMeasurement', 
+	'InstanceHeartRate',
+]

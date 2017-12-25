@@ -2,11 +2,12 @@
 
 import * as ble from './BleActions'
 import { Map, List, OrderedMap } from 'immutable'
-
+import {TYPE_OBJECTS} from './Const.js'
 const defaultState = Map({
   devices: OrderedMap(),
   selectedDeviceUUID: null,
   selectedServiceUUID: null,
+
   selectedCharacteristicUUID: null,
   scanning: false,
   errors: List(),
@@ -16,6 +17,8 @@ const defaultState = Map({
   updateStates: List([true, true
   ])
 });
+const keysOfUpdateType = TYPE_OBJECTS
+
 
 export default (state = defaultState, action) => {
   const transactionId = state.get('transactionId');
@@ -88,7 +91,6 @@ export default (state = defaultState, action) => {
     case ble.POP_ERROR:
       return state.set('errors', state.get('errors').pop())
     case ble.UPDATE_STATES:
-      let keysOfUpdateType = ['HRMeasurement', 'HRLocation', 'PedoMeasurement']
       return state.set('updateStates', state.get('updateStates')
         .update(keysOfUpdateType.indexOf(action.updateType), val =>{ return (!val) }));
     default:

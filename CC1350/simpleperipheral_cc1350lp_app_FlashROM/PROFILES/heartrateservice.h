@@ -63,13 +63,14 @@ extern "C"
 
 
 // Heart Rate Service Parameters
-#define HEARTRATE_MEAS                      0
-#define HEARTRATE_MEAS_CHAR_CFG             1
-#define HEARTRATE_SENS_LOC                  2
-#define HEARTRATE_COMMAND                   3
-#define HEARTRATE_VALUE 	                  4
+#define HEARTRATE_SENS_LOC                  0
+#define HEARTRATE_COMMAND                   1
+#define HEARTRATE_VALUE 	                  2
+#define HEARTRATE_MEASURE                   3
+#define HEARTRATE_MEASURE_CHAR_CFG          4
 
 #define	HEARTRATE_VALUE_UUID 								0x2A3A
+#define	HEARTRATE_MEASURE_UUID 				   		0x2A3B
 
 // Length of Characteristic in bytes
 #define HEARTRATE_VALUE_LEN									3

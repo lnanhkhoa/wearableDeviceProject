@@ -5,6 +5,7 @@ import { ProgressDialog } from 'react-native-simple-dialogs';
 import ProgressCircle from 'react-native-progress-circle'
 import styles from "./styles"
 import { connect, ble } from '../../../Redux/'
+import {devInfo, servicesUUID } from '../../../Ble/config.js'
 
 const datas = [
 ];
@@ -26,7 +27,15 @@ class ConnectDevice extends Component {
         visibleWaiting: false,
       })
     }
-    if(!nextProps.errors.isEmpty()){
+    if(!nextProps.errors.isEmpty() && this.state.visibleWaiting){
+      Alert.alert(
+        'Message',
+        "Error",
+        [
+          {text: 'OK'},
+        ],
+        { cancelable: false }
+      )
       this.setState({
         visibleWaiting: false,
       })
@@ -37,7 +46,7 @@ class ConnectDevice extends Component {
       return true
   }
   componentWillUpdate(nextProps){    
-    if(nextProps.devices !== this.props.devices){
+    if(nextProps.devices !== this.props.devices && !!nextProps.devices){
       let devices = nextProps.devices.toObject()
       let keys = Object.keys(devices);
       if(keys.length>0){
@@ -55,6 +64,14 @@ class ConnectDevice extends Component {
         showSkip=false
         this.props.navigation.navigate("Drawer")
       }else{
+        Alert.alert(
+          'Message',
+          "Can't connect to this device!",
+          [
+            {text: 'OK'},
+          ],
+          { cancelable: false }
+        )
         this.props.changeDeviceState(this.props.selectedDeviceUUID, ble.DEVICE_STATE_DISCONNECT);
       }
     }
@@ -104,12 +121,23 @@ class ConnectDevice extends Component {
     }
   }
 
-  processDeviceConnected(){
-    if(this.props.selectedDeviceUUID === "CC:78:AB:AD:D9:84"){
-      return true
-    }else if(this.props.selectedDeviceUUID !== null ){
+  checkInArray(text, arrSource){
+      for (let i = 0; i < arrSource.length; i++) {
+        if (arrSource[i].indexOf(text) !== -1) return true
+      }
       return false
+  }
 
+  processDeviceConnected=()=>{
+    if(!!this.props.checkDevice){
+      let servicesKeys = this.props.checkDevice.keySeq().toArray()
+      let servicesKeysNeedCheck = servicesUUID.keys
+      for (let i = 0; i < servicesKeysNeedCheck.length; i++) {
+        if(!this.checkInArray(servicesKeysNeedCheck[i], servicesKeys)){ 
+          return false
+        } 
+      }
+      return true
     }
   }
   refresh=()=>{
@@ -118,18 +146,11 @@ class ConnectDevice extends Component {
 
   _keyExtractor = (item, index) => item.id;
 
-  render1() {
-    return(
-      <Container style={{backgroundColor: "#ecf0f1", flex:1}}>
-      </Container>
-    );
-  }
-
 	render() {
     mount +=1
 		return (
-			<Container style={{backgroundColor: "#ecf0f1", flex: 1}}>
-				<Header style={{backgroundColor: "#2980b9"}}>
+			<Container style={{backgroundColor: "white", flex: 1}}>
+				<Header style={{backgroundColor: "#2980b9"}} androidStatusBarColor='#2980b9'>
           <Left>
             <Button transparent onPress={()=>this.props.navigation.goBack()}>
               <Icon name="arrow-back" />
@@ -167,7 +188,7 @@ class ConnectDevice extends Component {
                   <Left>
                     <ProgressCircle
                       percent={Math.abs(item.rssi)} radius={30} borderWidth={5}
-                      color="#e74c3c" shadowColor="#999"
+                      color="#c0392b" shadowColor="#bdc3c7"
                     >
                       <Text style={{ fontSize: 10 }}>{'RSSI'}</Text>
                       <Text style={{ fontSize: 20 }}>{item.rssi}</Text>
@@ -189,9 +210,8 @@ class ConnectDevice extends Component {
             />
   				</View>
   				<View style={{flex: 20, alignItems: 'center', justifyContent: 'center' }}>
-            <Text> {mount} </Text>
   					<Button large  
-              style={{ backgroundColor: "#6FAF98", alignSelf: "center" }}
+              style={{ backgroundColor: "#2E7D32", alignSelf: "center" }}
   						onPress={this.refresh} >
   						<Text>Show vailable Devices</Text>
   					</Button>
@@ -203,14 +223,17 @@ class ConnectDevice extends Component {
 }
 
 export default connect(
-  state => ({
-    devices: state.getIn(['ble', 'devices']),
-    state: state.getIn(['ble', 'state']),
-    scanning: state.getIn(['ble', 'scanning']),
-    selectedDeviceUUID: state.getIn(['ble','selectedDeviceUUID']),
-    errors: state.getIn(['ble','errors'])
-  }),
-  {
+  state => {
+    const selectedDeviceUUID = state.getIn(['ble','selectedDeviceUUID'])
+    return {
+      devices: state.getIn(['ble', 'devices']),
+      state: state.getIn(['ble', 'state']),
+      scanning: state.getIn(['ble', 'scanning']),
+      selectedDeviceUUID: selectedDeviceUUID,
+      errors: state.getIn(['ble','errors']),
+      checkDevice: state.getIn(['ble', 'devices', selectedDeviceUUID, 'services'])    
+    }
+  },{
     startScan: ble.startScan,
     stopScan: ble.stopScan,
     changeDeviceState: ble.changeDeviceState,

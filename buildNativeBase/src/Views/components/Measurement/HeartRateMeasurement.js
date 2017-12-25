@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { TouchableOpacity } from 'react-native'
+import { View, TouchableOpacity } from 'react-native'
 import { Container, Content, Card, CardItem, Text, Body, Icon, Button } from 'native-base'
 import ProgressCircle from 'react-native-progress-circle'
 import { BarChart, LineChart } from './charts.js'
@@ -10,7 +10,10 @@ import { heartRate, deviceUUID } from '../../../Ble/config'
 import { realmMeasureService } from '../../../Realm/'
 
 
-const realmInstanceDataLimit = []
+const realmInstanceHeartRate = []
+const realmInstanceSpO2 = []
+const valueHeartRate = 0
+const valueSpO2 = 0
 const mount = 0
 class HeartRateMeasurement extends Component {
 	// eslint-disable-line
@@ -18,7 +21,8 @@ class HeartRateMeasurement extends Component {
 		super(props)
 		this.state={
 			percent: 0,
-			PlayStopButton: true
+			PlayStopButton: true,
+			intervalID: null
 		}
 	}
 	componentDidMount(){
@@ -29,39 +33,82 @@ class HeartRateMeasurement extends Component {
 	}
 
 	componentWillReceiveProps(newProps){
-		realmInstanceDataLimit=realmMeasureService.findInstanceLimit('Instance_HeartRate', 50)
+		if(newProps.updateStates !== this.props.updateStates){
+			realmInstanceHeartRate = realmMeasureService.findInstanceLimit('InstanceHeartRate', 50)
+			realmInstanceSpO2 = realmMeasureService.findInstanceLimit('InstanceSpO2', 50)
+			let HRobjects = this.getOneObjectRealm('HeartRateMeasurement')
+			valueHeartRate = HRobjects.heartRate
+			valueSpO2 = HRobjects.spO2
+		}
+
 	}
 
 	shouldComponentUpdate(newProps){
 		return true
 	}
 
-
 	readHeartRateMeasurement(isNotifying: bool){
     this.props.monitorCharacteristic(this.props.selectedDeviceUUID, heartRate.services, heartRate.measurement, !isNotifying) 
+  	this.readHeartRateValue(isNotifying, 500)    
     this.setState({
     	PlayStopButton: isNotifying
     })
   }
 
-  readLocation(){
-    this.props.readCharacteristic(this.props.selectedDeviceUUID, heartRate.services, heartRate.location)
+  readHeartRateValue(turn:bool, interval: number){
+  	if(!turn){
+	  	this.state.intervalID = setInterval(()=>{
+		    this.props.readCharacteristic(this.props.selectedDeviceUUID, heartRate.services, heartRate.location)
+		    this.props.readCharacteristic(this.props.selectedDeviceUUID, heartRate.services, heartRate.measValue)
+	  	},interval)
+  	}else{
+  		clearInterval(this.state.intervalID)
+  	}
   }
 
-  getRealmInstance(index:number){
-    let dataInstanceLimit = realmInstanceDataLimit.slice(index, index+1).map(function(item){
-      return item.value
-    })
+  getOneObjectRealm(name:string){
+  	let objects = realmMeasureService.findWithLimit(name, 1);
+  	return objects[0]
+  }
+
+  getRealmInstance(name, index:number){
+  	let dataInstanceLimit = null
+  	switch(name){
+  		case 'InstanceHeartRate':
+		    dataInstanceLimit = realmInstanceHeartRate.slice(index, index+1).map(function(item){
+		      return item.value
+		    })
+		    break;
+		  case 'InstanceSpO2':
+		  	dataInstanceLimit = realmInstanceSpO2.slice(index, index+1).map(function(item){
+		      return item.value
+		    })
+		    break;
+		  default: dataInstanceLimit = null; break;
+		 }
     return dataInstanceLimit
   }
-  getRealmInstanceLineChart(){
-  	let dataInstanceLimit = realmInstanceDataLimit.map(function(item){
-      return item.value
-    })
+
+  getRealmInstanceLineChart(name:string){
+  	let dataInstanceLimit = null
+  	switch(name){
+  		case 'InstanceHeartRate':
+		  	dataInstanceLimit = realmInstanceHeartRate.map(function(item){
+		      return item.value
+		    })
+		    break;
+
+		  case 'InstanceSpO2':
+		    dataInstanceLimit = realmInstanceSpO2.map(function(item){
+		      return item.value
+		    })
+		    break;
+		  default: dataInstanceLimit = null; break;	  
+  	}
     
   	switch(dataInstanceLimit.length){
   		case 0: 
-  			return [0,0]
+  			return [0, 0]
   		case 1:
   			dataInstanceLimit.push(0)
 			default:
@@ -72,30 +119,26 @@ class HeartRateMeasurement extends Component {
   	this.forceUpdate()
   }
 	render() {
-		// eslint-disable-line
+		// eslint
+		// -disable-line
 		mount +=1
-		const value = this.getRealmInstance(0)[0]
-		const arr = this.getRealmInstanceLineChart()
-		console.log(arr)
+		const arrayHeartRate = this.getRealmInstanceLineChart('InstanceHeartRate')		
 		return (
-			<Content padder style={{ marginTop: 0,backgroundColor: "#bdc3c7"}}>
-				<TouchableOpacity onPress={this.update.bind(this)}>
-					<Text>{mount}</Text>
-				</TouchableOpacity>
+			<Content padder style={{ marginTop: 0,backgroundColor: "white"}}>
 				<Card style={styles.card}>
 					<ProgressCircle
-					  percent={(value/2.55) |0}
-					  radius={130}
+					  percent={(valueHeartRate/2.55) |0}
+					  radius={100}
 					  borderWidth={20}
-					  color="#e74c3c"
-					  shadowColor="#999"
-					  bgColor="#bdc3c7"
+					  color="#FF307E"
+					  shadowColor="#bdc3c7"
+					  bgColor="white"
 					>
-					  <Text style={{ fontSize: 60 }}>{value |0}</Text>
+					  <Text style={{ fontSize: 60 }}>{valueHeartRate |0}</Text>
 					  <Text style={{ fontSize: 20 }}>{'BPM'}</Text>
 					</ProgressCircle>
 					<LineChart
-						data={arr}
+						data={arrayHeartRate}
 					/>
 				</Card>
 				<Body st>
@@ -123,8 +166,6 @@ class HeartRateMeasurement extends Component {
 const mapStateToProps=(state) =>{
   return ({
   	selectedDeviceUUID: state.getIn(['ble', 'selectedDeviceUUID']),
-    // location: state.getIn(['ble', 'devices', deviceUUID, 'services', heartRate.services, 'characteristics', heartRate.location]),
-    // heartrate: state.getIn(['ble', 'devices', deviceUUID, 'services', heartRate.services, 'characteristics', heartRate.measurement]),
     updateStates: state.getIn(['ble','updateStates'])
   })
 }

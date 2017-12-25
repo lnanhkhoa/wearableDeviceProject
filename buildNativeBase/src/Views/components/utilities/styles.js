@@ -1,10 +1,13 @@
 const React = require("react-native");
 
-const { StyleSheet } = React;
+export const primaryColor = "#42474F"
 
 export default {
   container: {
     backgroundColor: "#FFF"
+  },
+  header:{
+    backgroundColor: primaryColor,
   },
   text: {
     alignSelf: "center",

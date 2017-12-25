@@ -15,12 +15,18 @@ import {
   Right,
   Body
 } from "native-base";
-import styles from "./styles";
+import styles, {primaryColor} from "./styles";
 import { connect, ble } from '../../../Redux/'
 
 const datas = [
   {
     text: "Update Time for Smartwatch",
+    note: "",
+    time: "3:43 pm",
+    press: "Update Time"
+  },
+  {
+    text: "Clear Cache",
     note: "",
     time: "3:43 pm",
     press: "Update Time"
@@ -31,7 +37,10 @@ class Utilities extends Component {
   render() {
     return (
       <Container style={styles.container}>
-        <Header>
+        <Header hasTabs 
+          style={styles.header}
+          androidStatusBarColor={primaryColor}
+        >
           <Left>
             <Button transparent onPress={() => this.props.navigation.navigate("DrawerOpen")}>
               <Icon name="menu" />

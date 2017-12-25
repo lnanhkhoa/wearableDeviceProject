@@ -70,6 +70,8 @@
  * CONSTANTS
  */
 
+#define SERVAPP_NUM_ATTR_SUPPORTED        21
+
 /*********************************************************************
  * TYPEDEFS
  */
@@ -80,19 +82,19 @@
 // Simple GATT Profile Service UUID: 0xFFF0
 CONST uint8 pedometerServUUID[ATT_BT_UUID_SIZE] =
 { 
-  LO_UINT16(Pedometer_SERV_UUID), HI_UINT16(Pedometer_SERV_UUID)
+  LO_UINT16(PEDOMETER_SERV_UUID), HI_UINT16(PEDOMETER_SERV_UUID)
 };
 
 // Characteristic 1 UUID: 0xFFF1
 CONST uint8 pedometerchar1UUID[ATT_BT_UUID_SIZE] =
 { 
-  LO_UINT16(Pedometer_CHAR1_UUID), HI_UINT16(Pedometer_CHAR1_UUID)
+  LO_UINT16(PEDOMETER_CHAR1_UUID), HI_UINT16(PEDOMETER_CHAR1_UUID)
 };
 
 // Characteristic 2 UUID: 0xFFF2
 CONST uint8 pedometerchar2UUID[ATT_BT_UUID_SIZE] =
 { 
-  LO_UINT16(Pedometer_CHAR2_UUID), HI_UINT16(Pedometer_CHAR2_UUID)
+  LO_UINT16(PEDOMETER_CHAR2_UUID), HI_UINT16(PEDOMETER_CHAR2_UUID)
 };
 
 /*********************************************************************
@@ -121,26 +123,27 @@ static CONST gattAttrType_t pedometerService = { ATT_BT_UUID_SIZE, pedometerServ
 static uint8 pedometerChar1Props = GATT_PROP_READ;
 
 // Characteristic 1 Value
-static uint8 pedometerChar1 = 0;
+static uint8 pedometerChar1[PEDOMETER_CHAR1_LEN] = {0x03, 0x23, 0x06};
 
 // Simple Profile Characteristic 1 User Description
-static uint8 pedometerChar1UserDesp[17] = "Accel Range";
+static uint8 pedometerChar1UserDesp[30] = "step.distance.calo";
 
 
 // Simple Profile Characteristic 2 Properties
 static uint8 pedometerChar2Props = GATT_PROP_READ;
 
 // Characteristic 2 Value
-static uint8 pedometerChar2 = 0;
+static uint8 pedometerChar2[PEDOMETER_CHAR2_LEN] = {0x01, 0x02};
 
 // Simple Profile Characteristic 2 User Description
-static uint8 pedometerChar2UserDesp[17] = "Step Count";
+static uint8 pedometerChar2UserDesp[17] = "Characteristic 2";
+
 
 /*********************************************************************
  * Profile Attributes - Table
  */
 
-static gattAttribute_t pedometerAttrTbl[] = 
+static gattAttribute_t pedometerAttrTbl[] =
 {
   // Simple Profile Service
   { 
@@ -163,7 +166,7 @@ static gattAttribute_t pedometerAttrTbl[] =
         { ATT_BT_UUID_SIZE, pedometerchar1UUID },
         GATT_PERMIT_READ, 
         0, 
-        &pedometerChar1 
+        (uint8 *) pedometerChar1 
       },
 
       // Characteristic 1 User Description
@@ -187,7 +190,7 @@ static gattAttribute_t pedometerAttrTbl[] =
         { ATT_BT_UUID_SIZE, pedometerchar2UUID },
         GATT_PERMIT_READ, 
         0, 
-        &pedometerChar2 
+        (uint8 *)pedometerChar2 
       },
 
       // Characteristic 2 User Description
@@ -196,7 +199,7 @@ static gattAttribute_t pedometerAttrTbl[] =
         GATT_PERMIT_READ, 
         0, 
         pedometerChar2UserDesp 
-      },
+      },           
 };
 
 /*********************************************************************
@@ -226,9 +229,9 @@ static bStatus_t pedometer_WriteAttrCB(uint16_t connHandle,
 // made within these functions.
 CONST gattServiceCBs_t pedometerCBs =
 {
-  pedometer_ReadAttrCB,     // Read callback function pointer
-  NULL,                     // Write callback function pointer
-  NULL                      // Authorization callback function pointer
+  pedometer_ReadAttrCB,  // Read callback function pointer
+  pedometer_WriteAttrCB, // Write callback function pointer
+  NULL                       // Authorization callback function pointer
 };
 
 /*********************************************************************
@@ -249,15 +252,17 @@ CONST gattServiceCBs_t pedometerCBs =
 bStatus_t Pedometer_AddService( uint32 services )
 {
   uint8 status;
-
-  if ( services & Pedometer_SERVICE )
+  
+  if ( services & PEDOMETER_SERVICE )
   {
     // Register GATT attribute list and CBs with GATT Server App
     status = GATTServApp_RegisterService( pedometerAttrTbl, 
                                           GATT_NUM_ATTRS( pedometerAttrTbl ),
                                           GATT_MAX_ENCRYPT_KEY_SIZE,
                                           &pedometerCBs );
-  }else {
+  }
+  else
+  {
     status = SUCCESS;
   }
 
@@ -307,10 +312,11 @@ bStatus_t Pedometer_SetParameter( uint8 param, uint8 len, void *value )
   bStatus_t ret = SUCCESS;
   switch ( param )
   {
-    case Pedometer_CHAR1:
-      if ( len == sizeof ( uint8 ) ) 
+    case PEDOMETER_CHAR1:
+      if ( len <= PEDOMETER_CHAR1_LEN ) 
       {
-        pedometerChar1 = *((uint8*)value);
+        memset(pedometerChar1, 0, PEDOMETER_CHAR1_LEN+1);
+        memcpy(pedometerChar1, value, len);
       }
       else
       {
@@ -318,10 +324,11 @@ bStatus_t Pedometer_SetParameter( uint8 param, uint8 len, void *value )
       }
       break;
 
-    case Pedometer_CHAR2:
-      if ( len == sizeof ( uint8 ) ) 
+    case PEDOMETER_CHAR2:
+      if ( len <= PEDOMETER_CHAR2_LEN ) 
       {
-        pedometerChar2 = *((uint8*)value);
+        memset(pedometerChar2, 0, PEDOMETER_CHAR2_LEN+1);
+        memcpy(pedometerChar2, value, len);
       }
       else
       {
@@ -355,12 +362,12 @@ bStatus_t Pedometer_GetParameter( uint8 param, void *value )
   bStatus_t ret = SUCCESS;
   switch ( param )
   {
-    case Pedometer_CHAR1:
-      *((uint8*)value) = pedometerChar1;
+    case PEDOMETER_CHAR1:
+      memcpy(value, pedometerChar1, sizeof(pedometerChar1));
       break;
 
-    case Pedometer_CHAR2:
-      *((uint8*)value) = pedometerChar2;
+    case PEDOMETER_CHAR2:
+      memcpy(value, pedometerChar1, sizeof(pedometerChar1));
       break;      
 
     default:
@@ -414,12 +421,41 @@ static bStatus_t pedometer_ReadAttrCB(uint16_t connHandle,
       //   included here
       // characteristic 4 does not have read permissions, but because it
       //   can be sent as a notification, it is included here
-      case Pedometer_CHAR1_UUID:
-      case Pedometer_CHAR2_UUID:
-        *pLen = 1;
-        pValue[0] = *pAttr->pValue;
+      case PEDOMETER_CHAR1_UUID:
+        {
+          uint8 len = sizeof(pedometerChar1);
+          // verify offset
+          if (offset > len)
+          {
+            status = ATT_ERR_INVALID_OFFSET;
+          }
+          else
+          {
+            // determine read length (exclude null terminating character)
+            *pLen = MIN(maxLen, (len - offset));
+            // copy data
+            memcpy(pValue, &(pAttr->pValue[offset]), *pLen);
+          }
+        }
         break;
-
+      case PEDOMETER_CHAR2_UUID:
+        {
+          uint8 len = sizeof(pedometerChar2);
+          // verify offset
+          if (offset > len)
+          {
+            status = ATT_ERR_INVALID_OFFSET;
+          }
+          else
+          {
+            // determine read length (exclude null terminating character)
+            *pLen = MIN(maxLen, (len - offset));
+            // copy data
+            memcpy(pValue, &(pAttr->pValue[offset]), *pLen);
+          }
+        }
+        break;
+      
       default:
         // Should never get here! (characteristics 3 and 4 do not have read permissions)
         *pLen = 0;
@@ -465,7 +501,7 @@ static bStatus_t pedometer_WriteAttrCB(uint16_t connHandle,
     uint16 uuid = BUILD_UINT16( pAttr->type.uuid[0], pAttr->type.uuid[1]);
     switch ( uuid )
     {
-      case Pedometer_CHAR1_UUID:
+      case PEDOMETER_CHAR2_UUID:
 
         //Validate the value
         // Make sure it's not a blob oper
@@ -487,13 +523,9 @@ static bStatus_t pedometer_WriteAttrCB(uint16_t connHandle,
           uint8 *pCurValue = (uint8 *)pAttr->pValue;        
           *pCurValue = pValue[0];
 
-          if( pAttr->pValue == &pedometerChar1 )
+          if( pAttr->pValue == pedometerChar2 )
           {
-            notifyApp = Pedometer_CHAR1;        
-          }
-          else
-          {
-            notifyApp = Pedometer_CHAR3;           
+            notifyApp = PEDOMETER_CHAR2;        
           }
         }
              

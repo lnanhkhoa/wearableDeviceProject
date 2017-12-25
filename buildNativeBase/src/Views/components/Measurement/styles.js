@@ -1,18 +1,27 @@
 const React = require("react-native");
 
 const { StyleSheet } = React;
-
+export const primaryColor = "#42474F"
 export default {
   container: {
-    backgroundColor: "#FFF"
+    backgroundColor: primaryColor
+  },
+  header:{
+    backgroundColor: primaryColor,
+  },
+  tabBar:{
+    backgroundColor: primaryColor
+  },
+  tabBarUnderlineStyle:{
+    backgroundColor: primaryColor*0.7,
   },
   card:{
-    flex:1,
-    justifyContent: 'center',
+    flex:1,    
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 30,
+    paddingTop: 10,
     padding: 10,
-    "backgroundColor": "#bdc3c7"
+    "backgroundColor": "white"
   },
   text: {
     alignSelf: "center",
