@@ -1,0 +1,92 @@
+// Các giá trị cấu hình thanh ghi
+hr3_set_settings( sw_reset_en,diag_mode_dis,susp_count_dis,reg_read_dis );
+  //AFE_Reg_Write(0, 0x000008);
+  //led 2 start - end
+  hr3_set_led2_start_end( 0, 399 );
+  //AFE_Reg_Write(0x09, 0x000000);
+  //AFE_Reg_Write(0x0A, 0x00018F);
+  // led 2 sample start - end
+  hr3_set_led2_sample_start_end( 80, 399 );
+  //AFE_Reg_Write(0x01, 0x000050);
+  //AFE_Reg_Write(0x02, 0x00018F);
+  // adc reset 0  start - end
+  hr3_set_adc_reset0_start_end( 401, 407 );         // <-----------------------
+  //AFE_Reg_Write(0x15, 0x000191);
+  //AFE_Reg_Write(0x16, 0x000197);
+  // led 2 convert start - end
+  hr3_set_led2_convert_start_end( 408, 1467 );
+  //AFE_Reg_Write(0x0D, 0x000198);
+  //AFE_Reg_Write(0x0E, 0x0005BB);
+  
+  // led 3 convert start - stop
+  hr3_set_led3_start_stop( 400, 799 );
+  //AFE_Reg_Write(LED3LEDSTC, 0x000190);
+  //AFE_Reg_Write(LED3LEDENDC, 0x00031F);
+  // led 3 sample start end
+  hr3_set_led3_sample_start_end( 480, 799 );
+  //AFE_Reg_Write(SMPL_LED3_ST, 0x0001E0);
+  //AFE_Reg_Write(SMPL_LED3_END, 0x00031F);
+  // adc reset 1 start end
+  hr3_set_adc_reset1_start_end( 1469, 1475 );
+  //AFE_Reg_Write(ADC_RST_P1_ST, 0x0005BD);
+  //AFE_Reg_Write(ADC_RST_P1_END, 0x0005C3);
+  // led 3 convert start end
+  hr3_set_led3_convert_start_end( 1476, 2535 );
+  //AFE_Reg_Write(ADC_RST_P1_ST, 0x0005C4);
+  //AFE_Reg_Write(ADC_RST_P1_END, 0x0009E7);
+  // led 1 start end
+  hr3_set_led1_start_end( 800, 1199 );
+  //AFE_Reg_Write(LED1_ST, 0x000320);
+  //AFE_Reg_Write(LED1_END, 0x0004AE);
+  // led 1 sample start end
+  hr3_set_led1_sample_start_end( 880, 1199 );
+  //AFE_Reg_Write(SMPL_LED1_ST, 0x000370);
+  //AFE_Reg_Write(SMPL_LED1_END, 0x0004AF);
+  // adc reset 2 start end
+  hr3_set_adc_reset2_start_end( 2537, 2543 );
+  //AFE_Reg_Write(ADC_RST_P2_ST, 0x0009E9);
+  //AFE_Reg_Write(ADC_RST_P2_END, 0x0009EF);
+  // led 1 convert start end
+  hr3_set_led1_convert_start_end( 2544, 3603 );
+  //AFE_Reg_Write(LED1_CONV_ST, 0x0009F0);
+  //AFE_Reg_Write(LED1_CONV_END, 0x000E13);
+  // amb1 sample start - end
+  hr3_set_amb1_sample_start_end( 1279, 1598 );
+  //AFE_Reg_Write(0x0B, 0x0004FF);
+  //AFE_Reg_Write(0x0C, 0x00063E);
+  // adc reset 3 start - end
+  hr3_set_adc_reset3_start_end( 3605, 3611 );
+  //AFE_Reg_Write(0x1B, 0x000E15);
+  //AFE_Reg_Write(0x1C, 0x000E1B);
+  // amb1 convert start - end
+  hr3_set_amb1_convert_start_end( 3612, 4671 );
+  //AFE_Reg_Write(0x13, 0x000E1C);
+  //AFE_Reg_Write(0x14, 0x00123F);
+  // pdn cycle start - end
+  hr3_set_pdn_cycle_start_end( 5471, 39199 );
+  //AFE_Reg_Write(0x32, 0x00155F);
+  //AFE_Reg_Write(0x33, 0x00991F);
+  // prpct count
+  hr3_set_prpct_count( 39999 );                              //Clock timing for CLKDIV_PRF  = 1
+  //AFE_Reg_Write(0x1D, 0x009C3F);
+  // timer and average num
+  hr3_set_timer_and_average_num( true, 3 );
+  //AFE_Reg_Write(0x1E, 0x030100);
+  // seperate tia gain
+  hr3_set_seperate_tia_gain( true, 0, 4 );
+  //AFE_Reg_Write(0x20, 0x000408);
+  // tia gain
+  hr3_set_tia_gain( false, 0, 3 );
+  //AFE_Reg_Write(0x21, 0x000300);
+  // led currents
+  hr3_set_led_currents( 15,3,3 );
+  //AFE_Reg_Write(0x22, 0b000000000010000010000010);
+  // dynamic settings
+  hr3_set_dynamic_settings( &dynamic_modes );
+  //AFE_Reg_Write(0x23, 0x104200);
+  // clkout div
+  hr3_set_clkout_div( false, 2 );
+  //AFE_Reg_Write(0x29, 0x040000);
+  // int clk div
+  hr3_set_int_clk_div( 1 );
+  AFE_Reg_Write(0x39, 0x010000);
