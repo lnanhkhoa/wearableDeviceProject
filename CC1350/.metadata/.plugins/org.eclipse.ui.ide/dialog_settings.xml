@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<section name="Workbench">
-	<list key="org.eclipse.ui.internal.wizards.datatransfer.SmartImportRootWizardPage.knownSources">
-		<item value="E:\MEMSTECH\Current Project\Github\wearableDeviceProject\CC1350"/>
-		<item value="E:\MEMSTECH\Current Project\Github\wearableDeviceProject\CC1350\simple_peripheral_cc1350lp_app_FlashROM"/>
-		<item value="E:\MEMSTECH\Current Project\Github\wearableDeviceProject\CC1350\simpleperipheral_cc1350lp_app_FlashROM"/>
-		<item value="E:\MEMSTECH\Current Project\wearableDevice-master\simpleperipheral_cc1350lp_app_FlashROM"/>
-	</list>
-</section>
