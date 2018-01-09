@@ -129,10 +129,6 @@ static uint16_t battMinLevel = BATT_MIN_VOLTAGE;
 // Measurement teardown callback.
 static battServiceTeardownCB_t battServiceTeardownCB = NULL;
 
-uint16_t level;
-uint16_t batt;
-uint32_t temp;
-uint16_t tt;
 
 /*********************************************************************
  * Profile Attributes - variables
@@ -590,6 +586,10 @@ static void battNotify(uint16_t connHandle)
  */
 static uint16_t battMeasure(void)
 {
+  uint16_t level;
+  uint16_t batt;
+  uint32_t temp;
+  uint16_t tt;
   if (battServiceSetupCB != NULL)
   {
     battServiceSetupCB();
@@ -598,8 +598,7 @@ static uint16_t battMeasure(void)
       temp = AONBatMonBatteryVoltageGet();
       temp = temp * 4;
       if(temp <= battMaxLevel && temp >= battMinLevel){
-          temp = ((temp - battMinLevel)* 100 / (battMaxLevel - battMinLevel));
-          batt = temp;
+          batt = ((temp - battMinLevel)* 100 / (battMaxLevel - battMinLevel));
           tt= 1;
       }else if(temp > battMaxLevel){
           batt = 100;
