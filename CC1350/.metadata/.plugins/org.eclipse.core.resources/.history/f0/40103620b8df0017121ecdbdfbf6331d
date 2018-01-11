@@ -1,0 +1,10 @@
+eclipse.preferences.version=1
+encoding//Debug/HAL/Common/subdir_rules.mk=UTF-8
+encoding//Debug/HAL/Common/subdir_vars.mk=UTF-8
+encoding//Debug/HAL/Target/CC2650/Drivers/subdir_rules.mk=UTF-8
+encoding//Debug/HAL/Target/CC2650/Drivers/subdir_vars.mk=UTF-8
+encoding//Debug/HAL/Target/CC2650/_common/subdir_rules.mk=UTF-8
+encoding//Debug/HAL/Target/CC2650/_common/subdir_vars.mk=UTF-8
+encoding//Debug/ICallBLE/subdir_rules.mk=UTF-8
+encoding//Debug/ICallBLE/subdir_vars.mk=UTF-8
+encoding//Debug/sources.mk=UTF-8
