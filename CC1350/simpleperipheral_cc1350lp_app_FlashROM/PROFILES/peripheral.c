@@ -124,7 +124,7 @@
 #define GAPROLE_TASK_PRIORITY         3
 
 #ifndef GAPROLE_TASK_STACK_SIZE
-#define GAPROLE_TASK_STACK_SIZE       640
+#define GAPROLE_TASK_STACK_SIZE       1024 // 640
 #endif
 
 /*********************************************************************

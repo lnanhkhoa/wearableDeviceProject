@@ -62,7 +62,8 @@ extern "C"
  */
 
 // Max voltage (mV)
-#define BATT_MAX_VOLTAGE            3273
+#define BATT_MAX_VOLTAGE            3800
+#define BATT_MIN_VOLTAGE            2500
    
 // Battery Service Get/Set Parameters
 #define BATT_PARAM_LEVEL                0
@@ -185,6 +186,17 @@ extern bStatus_t Batt_MeasLevel(void);
  */
 extern void Batt_Setup(uint16 maxVal, battServiceSetupCB_t sCB,
                        battServiceTeardownCB_t tCB);
+
+/*********************************************************************
+ * @fn      battNotifyLevelState
+ *
+ * @brief   Send a notification of the battery level state
+ *          characteristic if a connection is established.
+ *
+ * @return  None.
+ */
+// extern void battNotifyLevel(void);
+// uint16_t Batt_testing(void);
 
 
 /*********************************************************************

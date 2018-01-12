@@ -71,7 +71,7 @@
 #include "gatt_uuid.h"
 #include "gatt_profile_uuid.h"
 #include "devinfoservice.h"
-#include "battservice.h"
+#include "Abattservice.h"
 #include "scanparamservice.h"
 
 #include "peripheral.h"

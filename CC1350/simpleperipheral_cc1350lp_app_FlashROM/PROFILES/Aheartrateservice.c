@@ -57,7 +57,8 @@
 #include "gatt_profile_uuid.h"
 #include "gattservapp.h"
 
-#include "heartrateservice.h"
+#include "Aheartrateservice.h"
+
 
 /*********************************************************************
  * MACROS
