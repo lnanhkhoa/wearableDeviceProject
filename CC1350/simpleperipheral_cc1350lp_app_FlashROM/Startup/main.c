@@ -40,8 +40,8 @@
  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
  ******************************************************************************
- Release Name: ti-ble-2.3.2-stack-sdk_1_50_xx
- Release Date: 2017-09-27 14:52:16
+ Release Name: ti-ble-2.3.1-stack-sdk_1_60_xx
+ Release Date: 2017-12-16 12:03:51
  *****************************************************************************/
   
 /*******************************************************************************
@@ -58,31 +58,20 @@
 #include "hal_assert.h"
 #include "bcomdef.h"
 #include "peripheral.h"
- #include "../Application/heart_rate.h"
-//#include "../Application/wearableDevice.h"
+#include "Application/heart_rate.h"
+ #include "Application/wearableDevice.h"
 
 /* Header files required to enable instruction fetch cache */
 #include <inc/hw_memmap.h>
 #include <driverlib/vims.h>
 
 #ifndef USE_DEFAULT_USER_CFG
-
 #include "ble_user_config.h"
-
 // BLE user defined configuration
 bleUserCfg_t user0Cfg = BLE_USER_CFG;
-
 #endif // USE_DEFAULT_USER_CFG
 
-#ifdef USE_CORE_SDK
-  #include <ti/display/Display.h>
-#else // !USE_CORE_SDK
-  #include <ti/mw/display/Display.h>
-#endif // USE_CORE_SDK
 
-#ifdef USE_FPGA
-#include <inc/hw_prcm.h>
-#endif // USE_FPGA
 
 /*******************************************************************************
  * MACROS
@@ -91,15 +80,6 @@ bleUserCfg_t user0Cfg = BLE_USER_CFG;
 /*******************************************************************************
  * CONSTANTS
  */
-
-#if defined( USE_FPGA )
-  #define RFC_MODE_BLE                 PRCM_RFCMODESEL_CURR_MODE1
-  #define RFC_MODE_ANT                 PRCM_RFCMODESEL_CURR_MODE4
-  #define RFC_MODE_EVERYTHING_BUT_ANT  PRCM_RFCMODESEL_CURR_MODE5
-  #define RFC_MODE_EVERYTHING          PRCM_RFCMODESEL_CURR_MODE6
-  //
-  #define SET_RFC_BLE_MODE(mode) HWREG( PRCM_BASE + PRCM_O_RFCMODESEL ) = (mode)
-#endif // USE_FPGA
 
 /*******************************************************************************
  * TYPEDEFS
@@ -135,10 +115,6 @@ PIN_Handle radCtrlHandle;
  * EXTERNS
  */
 
-extern void AssertHandler(uint8 assertCause, uint8 assertSubcause);
-
-extern Display_Handle dispHandle;
-
 /*******************************************************************************
  * @fn          Main
  *
@@ -156,13 +132,6 @@ extern Display_Handle dispHandle;
  */
 int main()
 {
-#if defined( USE_FPGA )
-  HWREG(PRCM_BASE + PRCM_O_PDCTL0) &= ~PRCM_PDCTL0_RFC_ON;
-  HWREG(PRCM_BASE + PRCM_O_PDCTL1) &= ~PRCM_PDCTL1_RFC_ON;
-#endif // USE_FPGA
-  
-  /* Register Application callback to trap asserts raised in the Stack */
-  RegisterAssertCback(AssertHandler);
 
   PIN_init(BoardGpioInitTable);
 
@@ -171,16 +140,11 @@ int main()
   radCtrlHandle = PIN_open(&radCtrlState, radCtrlCfg);
   
 #ifdef POWER_SAVING
-  Power_registerNotify(&rFSwitchPowerNotifyObj, PowerCC26XX_ENTERING_STANDBY | PowerCC26XX_AWAKE_STANDBY,
+  Power_registerNotify(&rFSwitchPowerNotifyObj, 
+                       PowerCC26XX_ENTERING_STANDBY | PowerCC26XX_AWAKE_STANDBY,
                        (Power_NotifyFxn) rFSwitchNotifyCb, NULL);
 #endif //POWER_SAVING
 #endif //CC1350_LAUNCHXL
-
-#if defined( USE_FPGA )
-  // set RFC mode to support BLE
-  // Note: This must be done before the RF Core is released from reset!
-  SET_RFC_BLE_MODE(RFC_MODE_BLE);
-#endif // USE_FPGA
   
   // Enable iCache prefetching
   VIMSConfigure(VIMS_BASE, TRUE, TRUE);
@@ -205,7 +169,7 @@ int main()
   GAPRole_createTask();
 
   HeartRate_createTask();
-  // wearableDevice_init();
+  wearableDevice_init();
 
   /* enable interrupts and start SYS/BIOS */
   BIOS_start();
@@ -213,89 +177,6 @@ int main()
   return 0;
 }
 
-
-/*******************************************************************************
- * @fn          AssertHandler
- *
- * @brief       This is the Application's callback handler for asserts raised
- *              in the stack.  When EXT_HAL_ASSERT is defined in the Stack
- *              project this function will be called when an assert is raised, 
- *              and can be used to observe or trap a violation from expected 
- *              behavior.       
- *              
- *              As an example, for Heap allocation failures the Stack will raise 
- *              HAL_ASSERT_CAUSE_OUT_OF_MEMORY as the assertCause and 
- *              HAL_ASSERT_SUBCAUSE_NONE as the assertSubcause.  An application
- *              developer could trap any malloc failure on the stack by calling
- *              HAL_ASSERT_SPINLOCK under the matching case.
- *
- *              An application developer is encouraged to extend this function
- *              for use by their own application.  To do this, add hal_assert.c
- *              to your project workspace, the path to hal_assert.h (this can 
- *              be found on the stack side). Asserts are raised by including
- *              hal_assert.h and using macro HAL_ASSERT(cause) to raise an 
- *              assert with argument assertCause.  the assertSubcause may be
- *              optionally set by macro HAL_ASSERT_SET_SUBCAUSE(subCause) prior
- *              to asserting the cause it describes. More information is
- *              available in hal_assert.h.
- *
- * input parameters
- *
- * @param       assertCause    - Assert cause as defined in hal_assert.h.
- * @param       assertSubcause - Optional assert subcause (see hal_assert.h).
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      None.
- */
-void AssertHandler(uint8 assertCause, uint8 assertSubcause)
-{
-  // Open the display if the app has not already done so
-  if ( !dispHandle )
-  {
-    dispHandle = Display_open(Display_Type_LCD, NULL);
-  }
-
-  Display_print0(dispHandle, 0, 0, ">>>STACK ASSERT");
-
-  // check the assert cause
-  switch (assertCause)
-  {
-    case HAL_ASSERT_CAUSE_OUT_OF_MEMORY:
-      Display_print0(dispHandle, 0, 0, "***ERROR***");
-      Display_print0(dispHandle, 2, 0, ">> OUT OF MEMORY!");
-      break;
-
-    case HAL_ASSERT_CAUSE_INTERNAL_ERROR:
-      // check the subcause
-      if (assertSubcause == HAL_ASSERT_SUBCAUSE_FW_INERNAL_ERROR)
-      {
-        Display_print0(dispHandle, 0, 0, "***ERROR***");
-        Display_print0(dispHandle, 2, 0, ">> INTERNAL FW ERROR!");
-      }
-      else
-      {
-        Display_print0(dispHandle, 0, 0, "***ERROR***");
-        Display_print0(dispHandle, 2, 0, ">> INTERNAL ERROR!");
-      }
-      break;
-
-    case HAL_ASSERT_CAUSE_ICALL_ABORT:
-      Display_print0(dispHandle, 0, 0, "***ERROR***");
-      Display_print0(dispHandle, 2, 0, ">> ICALL ABORT!");
-      HAL_ASSERT_SPINLOCK;
-      break;
-
-    default:
-      Display_print0(dispHandle, 0, 0, "***ERROR***");
-      Display_print0(dispHandle, 2, 0, ">> DEFAULT SPINLOCK!");
-      HAL_ASSERT_SPINLOCK;
-  }
-
-  return;
-}
 
 
 /*******************************************************************************

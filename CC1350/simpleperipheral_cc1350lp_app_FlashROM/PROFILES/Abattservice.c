@@ -62,7 +62,7 @@
 #include "gattservapp.h"
 #include "hiddev.h"
 
-#include "battservice.h"
+#include "Abattservice.h"
 
 /*********************************************************************
  * MACROS
@@ -137,7 +137,7 @@ static CONST gattAttrType_t battService = { ATT_BT_UUID_SIZE, battServUUID };
 
 // Battery level characteristic.
 static uint8_t battLevelProps = GATT_PROP_READ | GATT_PROP_NOTIFY;
-static uint8_t battLevel = 100;
+static uint8_t battLevel = 0;
 
 // Characteristic Presentation Format of the Battery Level Characteristic.
 static gattCharFormat_t battLevelPresentation = {
@@ -222,7 +222,7 @@ static bStatus_t battWriteAttrCB(uint16_t connHandle, gattAttribute_t *pAttr,
 
 static void battNotify(uint16_t connHandle);
 static uint8_t battMeasure(void);
-static void battNotifyLevel(void);
+void battNotifyLevel(void);
 
 /*********************************************************************
  * PROFILE CALLBACKS
@@ -400,17 +400,10 @@ bStatus_t Batt_MeasLevel(void)
   uint16_t level;
 
   level = battMeasure();
-
-  // If level has gone down
-  if (level < battLevel)
-  {
+  if(level >=0 && level <=100){
     // Update level
-    battLevel = (uint8)(level & 0x00FF);
-
-    // Send a notification
-    battNotifyLevel();
+    battLevel = (uint8_t)(level & 0x00FF);
   }
-
   return SUCCESS;
 }
 
@@ -585,7 +578,7 @@ static void battNotify(uint16_t connHandle)
  */
 static uint8_t battMeasure(void)
 {
-  uint32_t percent;
+  static uint32_t percent;
 
   // Call measurement setup callback
   if (battServiceSetupCB != NULL)
@@ -605,7 +598,7 @@ static uint8_t battMeasure(void)
   // Convert to percentage of maximum voltage.
   percent = ((percent* 100) / battMaxLevel);
 
-  // Call measurement teardown callback
+  // Call measurement teardown Callback
   if (battServiceTeardownCB != NULL)
   {
     battServiceTeardownCB();
@@ -637,6 +630,11 @@ static void battNotifyLevel(void)
   }
 }
 
+
+// uint16_t Batt_testing(void){
+//   // return AONBatMonBatteryVoltageGet();
+//   return 80;
+// }
 
 /*********************************************************************
 *********************************************************************/

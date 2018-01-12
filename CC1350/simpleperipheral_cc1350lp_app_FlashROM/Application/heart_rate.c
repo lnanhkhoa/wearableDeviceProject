@@ -63,118 +63,25 @@
 #include "gapbondmgr.h"
 #include "gatt_profile_uuid.h"
 #include "../PROFILES/devinfoservice.h"
-#include "../PROFILES/heartrateservice.h"
-#include "../PROFILES/battservice.h"
+#include "../PROFILES/Abattservice.h"
+#include "../PROFILES/Aheartrateservice.h"
 #include "../PROFILES/Apedometer.h"
 #include "../PROFILES/Asimple_gatt_profile.h"
 #include "osal_snv.h"
 #include "icall_apimsg.h"
 
 #include "util.h"
-#ifdef USE_CORE_SDK
-  #include <ti/display/Display.h>
-#else // !USE_CORE_SDK
-  #include <ti/mw/display/Display.h>
-#endif // USE_CORE_SDK
 #include "board_key.h"
 #include "board.h"
 #include "middleComunication.h"
+#include "wearableDevice.h"
+
 
 #include "heart_rate.h"
 
 /*********************************************************************
- * MACROS
+ * GLOBAL VARIABLES
  */
-
-// Convert BPM to RR-Interval for data simulation purposes.
-#define HEARTRATE_BPM2RR(bpm)            ((uint16) 60 * 1024 / (uint16) (bpm))
-
-/*********************************************************************
- * CONSTANTS
- */
-
-// Fast advertising interval in 625us units.
-#define DEFAULT_FAST_ADV_INTERVAL                       32
-
-// Duration of fast advertising duration in ms.
-#define DEFAULT_FAST_ADV_DURATION                       30000
-
-// Slow advertising interval in 625us units.
-#define DEFAULT_SLOW_ADV_INTERVAL                       1600
-
-// Slow advertising duration in ms (set to 0 for continuous advertising).
-#define DEFAULT_SLOW_ADV_DURATION                       0
-
-// How often to perform heart rate periodic event.
-#define DEFAULT_HEARTRATE_PERIOD                        2000
-
-// Whether to enable automatic parameter update request when a connection is
-// formed.
-#define DEFAULT_ENABLE_UPDATE_REQUEST                   GAPROLE_LINK_PARAM_UPDATE_WAIT_BOTH_PARAMS
-
-// Minimum connection interval (units of 1.25ms) if automatic parameter update
-// request is enabled.
-#define DEFAULT_DESIRED_MIN_CONN_INTERVAL               200
-
-// Maximum connection interval (units of 1.25ms) if automatic parameter update
-// request is enabled.
-#define DEFAULT_DESIRED_MAX_CONN_INTERVAL               1600
-
-// Slave latency to use if automatic parameter update request is enabled.
-#define DEFAULT_DESIRED_SLAVE_LATENCY                   1
-
-// Supervision timeout value (units of 10ms) if automatic parameter update
-// request is enabled.
-#define DEFAULT_DESIRED_CONN_TIMEOUT                    1000
-
-// Battery level is critical when it is less than this %
-#define DEFAULT_BATT_CRITICAL_LEVEL                     6
-
-// Battery measurement period in ms
-#define DEFAULT_BATT_PERIOD                             15000
-
-// How often to perform periodic event (in msec)
-#define SBP_PERIODIC_EVT_PERIOD                         5000
-
-// How often to perform periodic event (in msec)
-#define PEDOMETER_PERIODIC_EVT_PERIOD                   1000
-
-
-// Arbitrary values used to simulate measurements.
-#define HEARTRATE_BPM_DEFAULT                           73
-#define HEARTRATE_BPM_MAX                               80
-#define HEARTRATE_ENERGY_INCREMENT                      10
-#define HEARTRATE_FLAGS_IDX_MAX                         7
-
-// Task configuration
-#define HEARTRATE_TASK_PRIORITY                         1
-#define HEARTRATE_TASK_STACK_SIZE                       1024
-
-// Internal events for RTOS application.
-// Heart Rate events.
-#define HEARTRATE_MEAS_EVT                              (uint16_t)(1 << 0)
-#define HEARTRATE_MEAS_PERIODIC_EVT                     (uint16_t)(1 << 1)
-
-// Battery Event.
-#define HEARTRATE_BATT_EVT                              (uint16_t)(1 << 2)
-#define HEARTRATE_BATT_PERIODIC_EVT                     (uint16_t)(1 << 3)
-
-// Battery Event.
-#define HEARTRATE_ACC_EVT                               (uint16_t)(1 << 4)
-#define HEARTRATE_BATT_PERIODIC_EVT                     (uint16_t)(1 << 5)
-
-// Key Press events.
-#define HEARTRATE_KEY_CHANGE_EVT                        (uint16_t)(1 << 6)
-
-// Peripheral State Change Event.
-#define HEARTRATE_STATE_CHANGE_EVT                      (uint16_t)(1 << 7)
-
-#define SBP_CHAR_CHANGE_EVT                             (uint16_t)(1 << 8)
-#define SBP_PERIODIC_EVT                                (uint16_t)(1 << 9)
-#define PEDO_CHAR_CHANGE_EVT                            (uint16_t)(1 << 10)
-
-#define HEARTRATE_MEAS_LEN                              9
-#define HEARTRATE_RAWMEAS_LEN                           9
 
 /*********************************************************************
  * TYPEDEFS
@@ -186,12 +93,6 @@ typedef struct
   appEvtHdr_t hdr;  // Event header
 } heartRateEvt_t;
 
-/*********************************************************************
- * GLOBAL VARIABLES
- */
-
-// Display Interface
-Display_Handle dispHandle = NULL;
 
 /*********************************************************************
  * EXTERNAL VARIABLES
@@ -245,9 +146,9 @@ static uint8_t scanData[] =
   'T',
   ' ',
   'R',
-  'a',
-  't',
-  'e',
+  'A',
+  'T',
+  'E',
   ' ',
   'S',
   'e',
@@ -274,7 +175,7 @@ static uint8_t advertData[] =
 };
 
 // Device name attribute value.
-static uint8_t attDeviceName[GAP_DEVICE_NAME_LEN] = "HEART Rate SensoR";
+static uint8_t attDeviceName[GAP_DEVICE_NAME_LEN] = "HEART RATE Sensor";
 
 // GAP connection handle.
 static uint16_t gapConnHandle;
@@ -307,6 +208,8 @@ static const uint8_t heartRateflags[HEARTRATE_FLAGS_IDX_MAX] =
 /*********************************************************************
  * LOCAL FUNCTIONS
  */
+
+//********************************************************************
 
 // Task functions and message processing.
 static void HeartRate_init(void);
@@ -358,7 +261,7 @@ static const gapBondCBs_t heartRateBondCB =
   NULL                     // Pairing state callback.
 };
 
-static simpleProfileCBs_t SimpleBLEPeripheral_simpleProfileCBs =
+static simpleProfileCBs_t simpleProfile_ProfileCBs =
 {
   SimpleBLEPeripheral_charValueChangeCB // Characteristic value change callback
 };
@@ -390,7 +293,6 @@ void HeartRate_createTask(void)
   taskParams.stack = HeartRate_taskStack;
   taskParams.stackSize = HEARTRATE_TASK_STACK_SIZE;
   taskParams.priority = HEARTRATE_TASK_PRIORITY;
-
   Task_construct(&HeartRate_task, HeartRate_taskFxn, &taskParams, NULL);
 }
 
@@ -447,7 +349,6 @@ void HeartRate_init(void)
                       PEDOMETER_PERIODIC_EVT_PERIOD, 0, false, 
                       PEDO_CHAR_CHANGE_EVT);
 
-  // dispHandle = Display_open(Display_Type_LCD, NULL);
   // Setup the GAP Peripheral Role Profile.
   {
     uint8_t initial_advertising_enable = TRUE;
@@ -513,6 +414,7 @@ void HeartRate_init(void)
 
   // Add device info service.
   DevInfo_AddService();
+
   {
     uint8_t devInfoMfrName[DEVINFO_STR_ATTR_LEN+1] = "MEMSTECH";
     DevInfo_SetParameter(DEVINFO_MANUFACTURER_NAME, DEVINFO_STR_ATTR_LEN, devInfoMfrName);
@@ -541,17 +443,11 @@ void HeartRate_init(void)
   
   // Setup Simple Profile Characteristic Values.
   {
-    // uint8_t charValue1 = 1;
-    uint8_t charValue2 = 2;
     uint8_t charValue3 = 3;
     uint8_t charValue4[5] = {0x01, 0x02, 0x03, 0x04, 0x05};
     uint8_t charValue5[SIMPLEPROFILE_CHAR5_LEN] = { 1, 2, 3, 4, 5 };
     uint8_t charValue6 = 6;
 
-    // SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR1, sizeof(uint8_t),
-    //                            &charValue1);
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR2, sizeof(uint8_t),
-                               &charValue2);
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR3, sizeof(uint8_t),
                                &charValue3);
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR4, sizeof(charValue4),
@@ -566,16 +462,20 @@ void HeartRate_init(void)
   {
     // uint16_t charValue = 60;
     //  Pedometer_SetParameter(PEDOMETER_CHAR1, sizeof (uint16_t), &charValue);
-   }
+  }
 
   // Register for Heart Rate service callback.
   HeartRate_Register(&HeartRate_serviceCB);
 
   // Register for Battery service callback.
   Batt_Register (&HeartRate_battCB);
+  {
+    // Batt_MeasLevel();
+  }
+  // Util_startClock(&battPerClock);
 
   // Register for Simple Profile service callback.
-  SimpleProfile_RegisterAppCBs(&SimpleBLEPeripheral_simpleProfileCBs);
+  SimpleProfile_RegisterAppCBs(&simpleProfile_ProfileCBs);
 
   // Register for Simple Profile service callback.
   Pedometer_RegisterAppCBs(&Pedometer_pedometerCBs);
@@ -635,14 +535,14 @@ static void HeartRate_taskFxn(UArg a0, UArg a1)
     // If RTOS queue is not empty, process app message.
     while (!Queue_empty(appMsgQueue))
     {
-      heartRateEvt_t *pMsg = (heartRateEvt_t*)Util_dequeueMsg(appMsgQueue);
-      if (pMsg)
+      heartRateEvt_t *pMsg1 = (heartRateEvt_t*)Util_dequeueMsg(appMsgQueue); // diff between pMsg1 and above pMsg (bug)
+      if (pMsg1)
       {
         // Process message.
-        HeartRate_processAppMsg(pMsg);
+        HeartRate_processAppMsg(pMsg1);
 
         // Free the space from the message.
-        ICall_free(pMsg);
+        ICall_free(pMsg1);
       }
     }
 
@@ -772,7 +672,7 @@ static void HeartRate_processAppMsg(heartRateEvt_t *pMsg)
  *
  * @return  none
  */
-void HeartRate_keyPressHandler(uint8_t keys)
+static void HeartRate_keyPressHandler(uint8_t keys)
 {
   // Enqueue the event.
   HeartRate_enqueueMsg(HEARTRATE_KEY_CHANGE_EVT, keys);
@@ -815,10 +715,10 @@ static void HeartRate_handleKeys(uint8_t shift, uint8_t keys)
 
       // Toggle GAP advertisement status.
       // Set flag if advertising was cancelled.
-//      if (HeartRate_toggleAdvertising() == FALSE)
-//      {
-//        advCancelled = TRUE;
-//      }
+     // if (HeartRate_toggleAdvertising() == FALSE)
+     // {
+     //   advCancelled = TRUE;
+     // }
     }
   }
 }
@@ -954,21 +854,21 @@ static void HeartRate_stateChangeEvt(gaprole_States_t newState)
       // Enable advertising.
       // HeartRate_toggleAdvertising();
     }
-#if AUTO_ADV
+  #if AUTO_ADV
     else
     {
       // Test mode: continue advertising.
       // HeartRate_toggleAdvertising();
     }
-#endif //AUTO_ADV
+  #endif //AUTO_ADV
   }
-#if AUTO_ADV
+  #if AUTO_ADV
   else if (newState == GAPROLE_WAITING_AFTER_TIMEOUT)
   {
     // Test mode: continue advertising.
     // HeartRate_toggleAdvertising();
   }
-#endif //AUTO_ADV
+  #endif //AUTO_ADV
   // If started
   else if (newState == GAPROLE_STARTED)
   {
@@ -1134,14 +1034,18 @@ static void HeartRate_measPerTask(void)
  */
 static void HeartRate_battPerTask(void)
 {
-  if (gapProfileState == GAPROLE_CONNECTED)
-  {
-    // Perform battery level check.
-    Batt_MeasLevel();
+  // Perform battery level check
+  uint8_t percent;
+  Batt_MeasLevel();
+  Batt_GetParameter(BATT_PARAM_LEVEL, &percent);
+  // updateBatteryInDevice(percent);
 
-    // Restart timer.
-    Util_startClock(&battPerClock);
+  if (gapProfileState == GAPROLE_CONNECTED){
+      // Send a notification
+//      battNotifyLevel();
   }
+  // Restart timer.
+  Util_startClock(&battPerClock);
 }
 
 
@@ -1191,24 +1095,28 @@ static void Pedometer_pedometerCB(uint8_t paramID)
 static void SimpleBLEPeripheral_processCharValueChangeEvt(uint8_t paramID)
 {
   uint8_t newValue;
-
   switch(paramID)
   {
     case SIMPLEPROFILE_CHAR1:
-      SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR1, &newValue);
-
-      Display_print1(dispHandle, 4, 0, "Char 1: %d", (uint16_t)newValue);
+      uint8_t newDateTime[7] = {}; // ss,mm,hh,dd,mm,yy,cc
+      SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR1, newDateTime);
+      // updateTime(newDateTime);
       break;
-
+    case SIMPLEPROFILE_CHAR2:
+      uint8_t newConfigProfile[3] = {};
+      SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR2, newConfigProfile);
+      // updateConfigProfile(newConfigProfile);
+      break;
     case SIMPLEPROFILE_CHAR3:
       SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR3, &newValue);
-
-      Display_print1(dispHandle, 4, 0, "Char 3: %d", (uint16_t)newValue);
+      break;
+    case SIMPLEPROFILE_CHAR4:
+      SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR4, &newValue);
       break;
 
     default:
-      // should not reach here!
-      break;
+    // should not reach here!
+    break;
   }
 }
 
@@ -1228,7 +1136,6 @@ static void SimpleBLEPeripheral_processCharValueChangeEvt(uint8_t paramID)
 static void SimpleBLEPeripheral_performPeriodicTask(void)
 {
   uint8_t valueToCopy;
-  uint8_t value[5] = {0x06, 0x05, 0x04, 0x03, 0x02};
 
   // // Call to retrieve the value of the third characteristic in the profile
   if (SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR3, &valueToCopy) == SUCCESS)
@@ -1237,7 +1144,7 @@ static void SimpleBLEPeripheral_performPeriodicTask(void)
   //   // Note that if notifications of the fourth characteristic have been
   //   // enabled by a GATT client device, then a notification will be sent
   //   // every time this function is called.
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR4, sizeof(value), value);
+    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR4, sizeof(valueToCopy), &valueToCopy);
   }
 }
 
@@ -1285,8 +1192,28 @@ static uint8_t HeartRate_enqueueMsg(uint8_t event, uint8_t state)
   return FALSE;
 }
 
+/*********************************************************************
+                    API for any Header files need
+*********************************************************************/
+
+bool get_BLEState(void){
+  if(gapProfileState == GAPROLE_CONNECTED)
+    return true;
+  else
+    return false;
+}
 
 
+uint8_t get_BatteryPercent(void){
+  uint8_t percent = 0;
+  Batt_MeasLevel();
+  Batt_GetParameter(BATT_PARAM_LEVEL, &percent);
+  return percent;
+}
+
+// uint16_t batt_testing(void){
+//   return Batt_testing();
+// }
 
 /*********************************************************************
 *********************************************************************/
