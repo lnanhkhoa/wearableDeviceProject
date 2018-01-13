@@ -474,7 +474,7 @@ void AdafruitSSD1306_clearDisplay(void) {
 }
 
 
-static void AdafruitSSD1306_fastSPIwrite(uint8_t d) {
+void AdafruitSSD1306_fastSPIwrite(uint8_t d) {
 
   //  if(hwSPI) {
   //    (void)SPI.transfer(d);
@@ -495,7 +495,7 @@ static void AdafruitSSD1306_fastSPIwrite(uint8_t d) {
   //  }
 }
 
-static void AdafruitSSD1306_drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color) {
+void AdafruitSSD1306_drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color) {
   boolean bSwap = false;
   switch(rotation) {
     case 0:
@@ -529,7 +529,7 @@ static void AdafruitSSD1306_drawFastHLine(int16_t x, int16_t y, int16_t w, uint1
   }
 }
 
-static void AdafruitSSD1306_drawFastHLineInternal(int16_t x, int16_t y, int16_t w, uint16_t color) {
+void AdafruitSSD1306_drawFastHLineInternal(int16_t x, int16_t y, int16_t w, uint16_t color) {
   // Do bounds/limit checks
   if(y < 0 || y >= HEIGHT) { return; }
 
@@ -565,7 +565,7 @@ static void AdafruitSSD1306_drawFastHLineInternal(int16_t x, int16_t y, int16_t 
 }
 
 
-static void AdafruitSSD1306_drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color) {
+void AdafruitSSD1306_drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color) {
   bool bSwap = false;
   switch(rotation) {
     case 0:
@@ -599,7 +599,7 @@ static void AdafruitSSD1306_drawFastVLine(int16_t x, int16_t y, int16_t h, uint1
 }
 
 
-static void AdafruitSSD1306_drawFastVLineInternal(int16_t x, int16_t __y, int16_t __h, uint16_t color) {
+void AdafruitSSD1306_drawFastVLineInternal(int16_t x, int16_t __y, int16_t __h, uint16_t color) {
 
   // do nothing if we're off the left or right side of the screen
   if(x < 0 || x >= WIDTH) { return; }

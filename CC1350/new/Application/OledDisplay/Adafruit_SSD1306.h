@@ -135,14 +135,12 @@ typedef uint32_t PortMask;
     void AdafruitSSD1306_onoff(bool mode);
     uint8_t *AdafruitSSD1306_getbuffer(void);
 
-    static void AdafruitSSD1306_drawPixel(int16_t x, int16_t y, uint16_t color);
-
-    static void AdafruitSSD1306_drawFastVLine(AdafruitSSD1306_drawBitmap x, int16_t y, int16_t h, uint16_t color);
-    static void AdafruitSSD1306_drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);
-    static void AdafruitSSD1306_fastSPIwrite(uint8_t c);
-
-    static void AdafruitSSD1306_drawFastVLineInternal(int16_t x, int16_t y, int16_t h, uint16_t color) __attribute__((always_inline));
-    static void AdafruitSSD1306_drawFastHLineInternal(int16_t x, int16_t y, int16_t w, uint16_t color) __attribute__((always_inline));
+    void AdafruitSSD1306_drawPixel(int16_t x, int16_t y, uint16_t color);
+    void AdafruitSSD1306_drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);
+    void AdafruitSSD1306_drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);
+    void AdafruitSSD1306_fastSPIwrite(uint8_t c);
+    void AdafruitSSD1306_drawFastVLineInternal(int16_t x, int16_t y, int16_t h, uint16_t color) __attribute__((always_inline));
+    void AdafruitSSD1306_drawFastHLineInternal(int16_t x, int16_t y, int16_t w, uint16_t color) __attribute__((always_inline));
 
 /*************************************************************************************************************************************/
     void AdafruitSSD1306_drawBitmap(int16_t x, int16_t y, const unsigned char *bitmap, int16_t w, int16_t h, uint16_t color, uint16_t bg);

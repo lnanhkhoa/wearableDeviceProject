@@ -1,0 +1,8 @@
+
+
+1. DateTime
+2. Profile 
+3. Battery	: read
+4. Pedometer : step.distance.calo : read
+5. HeartRate :  - heartRate, spO2 : read
+6. 				- Raw data : notify
