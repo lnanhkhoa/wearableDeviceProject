@@ -520,6 +520,7 @@ static bStatus_t heartRate_ReadAttrCB(uint16_t connHandle,
         *pLen = 1;
         pValue[0] = *pAttr->pValue;
         break;
+        
       case HEARTRATE_MEASURE_UUID:
         {  
           uint8 len = sizeof(heartRateMeasure);
