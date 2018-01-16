@@ -141,7 +141,7 @@ extern void (*P_setCursor)(int16_t , int16_t ),
 
 
 // the most basic function, set a single pixel
-void AdafruitSSD1306_drawPixel(int16_t x, int16_t y, uint16_t color) {
+static void AdafruitSSD1306_drawPixel(int16_t x, int16_t y, uint16_t color) {
   
   if ((x < 0) || (x >= AdafruitSSD1306_width()) || (y < 0) || (y >= AdafruitSSD1306_height()))
     return;
@@ -171,25 +171,6 @@ void AdafruitSSD1306_drawPixel(int16_t x, int16_t y, uint16_t color) {
     }
 
 }
-
-// void AdafruitSSD1306_init(int8_t SID, int8_t SCLK, int8_t DC, int8_t RST, int8_t CS){
-//   AdafruitGFX_init(SSD1306_LCDWIDTH, SSD1306_LCDHEIGHT);
-//   cs = CS;
-//   rst = RST;
-//   dc = DC;
-//   sclk = SCLK;
-//   sid = SID;
-//   hwSPI = false;
-// }
-
-// // constructor for hardware SPI - we indicate DataCommand, ChipSelect, Reset
-// void AdafruitSSD1306_init(int8_t DC, int8_t RST, int8_t CS){
-//   AdafruitGFX_init(SSD1306_LCDWIDTH, SSD1306_LCDHEIGHT);
-//   dc = DC;
-//   rst = RST;
-//   cs = CS;
-//   hwSPI = true;
-// }
 
 // initializer for I2C - we only indicate the reset pin!
 void AdafruitSSD1306_init(int8_t reset){
@@ -330,7 +311,7 @@ void AdafruitSSD1306_invertDisplay(uint8_t i) {
   }
 }
 
-void ssd1306_command(uint8_t c) {
+static void ssd1306_command(uint8_t c) {
   if (sid != -1)
   {
     // SPI
@@ -357,74 +338,6 @@ void ssd1306_command(uint8_t c) {
 
     I2c_WriteByte(_i2caddr, reg, c);
   }
-}
-
-// startscrollright
-// Activate a right handed scroll for rows start through stop
-// Hint, the display is 16 rows tall. To scroll the whole display, run:
-// display.scrollright(0x00, 0x0F)
-void AdafruitSSD1306_startscrollright(uint8_t start, uint8_t stop){
-  ssd1306_command(SSD1306_RIGHT_HORIZONTAL_SCROLL);
-  ssd1306_command(0X00);
-  ssd1306_command(start);
-  ssd1306_command(0X00);
-  ssd1306_command(stop);
-  ssd1306_command(0X00);
-  ssd1306_command(0XFF);
-  ssd1306_command(SSD1306_ACTIVATE_SCROLL);
-}
-
-// startscrollleft
-// Activate a right handed scroll for rows start through stop
-// Hint, the display is 16 rows tall. To scroll the whole display, run:
-// display.scrollright(0x00, 0x0F)
-void AdafruitSSD1306_startscrollleft(uint8_t start, uint8_t stop){
-  ssd1306_command(SSD1306_LEFT_HORIZONTAL_SCROLL);
-  ssd1306_command(0X00);
-  ssd1306_command(start);
-  ssd1306_command(0X00);
-  ssd1306_command(stop);
-  ssd1306_command(0X00);
-  ssd1306_command(0XFF);
-  ssd1306_command(SSD1306_ACTIVATE_SCROLL);
-}
-
-// startscrolldiagright
-// Activate a diagonal scroll for rows start through stop
-// Hint, the display is 16 rows tall. To scroll the whole display, run:
-// display.scrollright(0x00, 0x0F)
-void AdafruitSSD1306_startscrolldiagright(uint8_t start, uint8_t stop){
-  ssd1306_command(SSD1306_SET_VERTICAL_SCROLL_AREA);
-  ssd1306_command(0X00);
-  ssd1306_command(SSD1306_LCDHEIGHT);
-  ssd1306_command(SSD1306_VERTICAL_AND_RIGHT_HORIZONTAL_SCROLL);
-  ssd1306_command(0X00);
-  ssd1306_command(start);
-  ssd1306_command(0X00);
-  ssd1306_command(stop);
-  ssd1306_command(0X01);
-  ssd1306_command(SSD1306_ACTIVATE_SCROLL);
-}
-
-// startscrolldiagleft
-// Activate a diagonal scroll for rows start through stop
-// Hint, the display is 16 rows tall. To scroll the whole display, run:
-// display.scrollright(0x00, 0x0F)
-void AdafruitSSD1306_startscrolldiagleft(uint8_t start, uint8_t stop){
-  ssd1306_command(SSD1306_SET_VERTICAL_SCROLL_AREA);
-  ssd1306_command(0X00);
-  ssd1306_command(SSD1306_LCDHEIGHT);
-  ssd1306_command(SSD1306_VERTICAL_AND_LEFT_HORIZONTAL_SCROLL);
-  ssd1306_command(0X00);
-  ssd1306_command(start);
-  ssd1306_command(0X00);
-  ssd1306_command(stop);
-  ssd1306_command(0X01);
-  ssd1306_command(SSD1306_ACTIVATE_SCROLL);
-}
-
-void AdafruitSSD1306_stopscroll(void){
-  ssd1306_command(SSD1306_DEACTIVATE_SCROLL);
 }
 
 // Dim the display
@@ -805,10 +718,6 @@ uint8_t *AdafruitSSD1306_getbuffer(void){
   return buffer;
 }
 
-
-
-
-
 void AdafruitSSD1306_drawBitmap(int16_t x, int16_t y, const unsigned char *bitmap, int16_t w, int16_t h, uint16_t color, uint16_t bg){
   AdafruitGFX_drawBitmap(x, y, bitmap, w, h, color, bg);
 }
@@ -837,10 +746,10 @@ void AdafruitSSD1306_printc(char c){
   AdafruitGFX_printc(c);
 }
 
-int16_t AdafruitSSD1306_height(void){
+static int16_t AdafruitSSD1306_height(void){
   return AdafruitGFX_height();
 }
 
-int16_t AdafruitSSD1306_width(void){
+static int16_t AdafruitSSD1306_width(void){
   return AdafruitGFX_width();
 }

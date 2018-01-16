@@ -16,11 +16,11 @@ static void pedometer_write_config(uint8_t *info);
 static void pedometer_afe_config(void);
 static void pedometer_afe_config_read(void);
 static void pedometer_wakeup(void);
-static void pedometer_cmd_readwakeup(void);
 static void pedometer_int0_enable(void);
-static void pedometer_cmd_readconfig(void);
-static void pedometer_cmd_readrawxyz(void);
-static void pedometer_cmd_readlpfxyz(void);
+// static void pedometer_cmd_readwakeup(void);
+// static void pedometer_cmd_readconfig(void);
+// static void pedometer_cmd_readrawxyz(void);
+// static void pedometer_cmd_readlpfxyz(void);
 
 extern void pedometer_cmd_readstatus(void);
 extern void pedometer_Read(uint8_t *buffer, uint8_t len);

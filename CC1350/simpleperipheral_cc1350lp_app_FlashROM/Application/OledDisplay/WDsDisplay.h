@@ -47,7 +47,7 @@
     void WDsDisplay__begin(int8_t vccstate, int8_t i2caddr);
     void WDsDisplay__Bluetooth_icon(bool enable);
     void WDsDisplay__Battery_charging(void);
-    void WDsDisplay__Battery_set(uint16_t percent, bool charge);
+    void WDsDisplay__Battery_set(uint8_t percent, bool charge);
     void WDsDisplay__Clock_set(uint8_t hh, uint8_t mm);
     void WDsDisplay__Colon_toogle(void);
     void WDsDisplay__Heartrate_status(void);
@@ -61,17 +61,18 @@
     void WDsDisplay__Clear_body(void);
     void WDsDisplay__Fill_body(void);
     void WDsDisplay__Fillfull(void);
-    void WDsDisplay__clear_16x16(int16_t x, int16_t y, uint16_t color);
-    void WDsDisplay__clear_18x24(int16_t x, int16_t y, uint16_t color);
-    void WDsDisplay__clear_heart(int16_t x, int16_t y, uint16_t color);
-    void WDsDisplay__clear_character(int16_t x, int16_t y, uint16_t fontsize, uint16_t length, uint16_t color);
+    
+    static void WDsDisplay__clear_16x16(int16_t x, int16_t y, uint16_t color);
+    static void WDsDisplay__clear_18x24(int16_t x, int16_t y, uint16_t color);
+    static void WDsDisplay__clear_heart(int16_t x, int16_t y, uint16_t color);
+    static void WDsDisplay__clear_character(int16_t x, int16_t y, uint16_t fontsize, uint16_t length, uint16_t color);
 
     void WDsDisplay__clearDisplay();
     void WDsDisplay__display();
     void WDsDisplay__onoff(bool mode);
+    
     void WDsDisplay__print(uint8_t *str);
     void WDsDisplay__setCursor(int16_t x, int16_t y);
-    
     void WDsDisplay__setTextColor(uint16_t c);
     void WDsDisplay__setTextSize(uint8_t s);
 

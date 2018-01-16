@@ -47,11 +47,11 @@ void WDsDisplay__Battery_charging(void)
     AdafruitSSD1306_drawBitmap(BATicon_x, BATicon_y, battery_charging, BATicon_width, BATicon_height, 1, 0);
 }
 
-void WDsDisplay__Battery_set(uint16_t percent, bool charge)
+void WDsDisplay__Battery_set(uint8_t percent, bool charge)
 {
     WDsDisplay__clear_16x16(BATicon_x, BATicon_y, 0);
     if(percent>100) percent = 100;
-    unsigned int per= percent/10;
+    uint8_t per= percent/10;
     switch(per)
     {
     case 10: ;
@@ -81,19 +81,17 @@ void WDsDisplay__Battery_set(uint16_t percent, bool charge)
 
 
 void WDsDisplay__Clock_set(uint8_t hh, uint8_t mm){
-    char buffer[6] = "";
+    uint8_t buffer[6] = "";
     AdafruitSSD1306_setTextSize(clock_textSize);
     AdafruitSSD1306_setTextColor(clock_textColor);
     AdafruitSSD1306_setCursor(clock_cursorx, clock_cursory);
     if(hh>24 || hh<0 || mm>60 || mm<0) return;
 
     if(hh<10){
-        // sprintf(buffer, "0%d", hh);
         buffer[0] = '0';
         buffer[1] = '0' + hh;
 
     }else{
-        // sprintf(buffer, "%d", hh);
         buffer[0] = '0' + (hh/10);
         buffer[1] = '0' + (hh%10);
     }
@@ -103,12 +101,10 @@ void WDsDisplay__Clock_set(uint8_t hh, uint8_t mm){
     else buffer[2] = ' ';
 
     if(mm<10){
-        // sprintf(&buffer[3], "0%d", mm);
         buffer[3] = '0';
         buffer[4] = '0' + mm;
     }
     else{
-        // sprintf(&buffer[3], "%d", mm);
         buffer[3] = '0' + (mm/10);
         buffer[4] = '0' + (mm%10);
     }
@@ -155,7 +151,6 @@ void WDsDisplay__Heartrate_number(int8_t number){ // -1 is wait
         AdafruitSSD1306_print((uint8_t*)buffer);
         return;
     }
-    // sprintf(buffer, "%d", number);
     uint8_t stringlen = 0;
     if(number<10){
         buffer[0] = '0' +temp;
@@ -172,8 +167,7 @@ void WDsDisplay__Heartrate_number(int8_t number){ // -1 is wait
         stringlen = 3;
     }
 
-    buffer[stringlen] = 0; // end
-    // int8_t stringlen = strlen(buffer);
+    buffer[stringlen] = 0; 
     switch(stringlen){
     case 1: AdafruitSSD1306_setCursor(heart_x + sizeBigHeart + padding + (3*font_width)*1, heart_y + padding); break;
     case 2: AdafruitSSD1306_setCursor(heart_x + sizeBigHeart + padding + (3*font_width)*1, heart_y + padding); break;
@@ -260,6 +254,10 @@ void WDsDisplay__Display_body(void){
     AdafruitSSD1306_displayPage(2, 7);
 }
 
+void WDsDisplay__display(){
+    AdafruitSSD1306_display();
+}
+
 void WDsDisplay__Clear_head(void){
     uint8_t* pointer = AdafruitSSD1306_getbuffer();
     memset(pointer, 0, SSD1306_LCDWIDTH*2);
@@ -277,16 +275,16 @@ void WDsDisplay__Fillfull(void){
 
 /* Private function */
 
-void WDsDisplay__clear_16x16(int16_t x, int16_t y, uint16_t color){
+static void WDsDisplay__clear_16x16(int16_t x, int16_t y, uint16_t color){
     uint8_t* pointer = AdafruitSSD1306_getbuffer();
     AdafruitSSD1306_fillRect(x, y, 16, 16, color);
 }
 
-void WDsDisplay__clear_18x24(int16_t x, int16_t y, uint16_t color){
+static void WDsDisplay__clear_18x24(int16_t x, int16_t y, uint16_t color){
     AdafruitSSD1306_fillRect(x, y, 18, 24, color);
 }
 
-void WDsDisplay__clear_heart(int16_t x, int16_t y, uint16_t color){
+static void WDsDisplay__clear_heart(int16_t x, int16_t y, uint16_t color){
     uint8_t* pointer = AdafruitSSD1306_getbuffer();
     uint8_t i = 0;
     for ( i = 0; i < 6; ++i) // 48/8
@@ -297,7 +295,7 @@ void WDsDisplay__clear_heart(int16_t x, int16_t y, uint16_t color){
     AdafruitSSD1306_fillRect(x, y, 48, 48, color);
 }
 
-void WDsDisplay__clear_character(int16_t x, int16_t y, uint16_t fontsize, uint16_t length, uint16_t color){
+static void WDsDisplay__clear_character(int16_t x, int16_t y, uint16_t fontsize, uint16_t length, uint16_t color){
     uint8_t fontSize[2] = {6, 8};
     AdafruitSSD1306_fillRect(x, y, fontSize[0]*fontsize*length, fontSize[1]*fontsize, color);
 }
@@ -306,9 +304,6 @@ void WDsDisplay__clearDisplay(){
     AdafruitSSD1306_clearDisplay();
 }
 
-void WDsDisplay__display(){
-    AdafruitSSD1306_display();
-}
 void WDsDisplay__onoff(bool mode){
     AdafruitSSD1306_onoff(mode);
 }      

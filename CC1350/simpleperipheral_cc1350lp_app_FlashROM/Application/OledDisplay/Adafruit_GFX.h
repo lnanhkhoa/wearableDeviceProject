@@ -62,7 +62,7 @@ typedef struct { // Data stored for FONT AS A WHOLE:
   // optimized code.  Otherwise 'generic' versions are used.
   
   void AdafruitGFX_setRotation(uint8_t r);
-//  virtual void invertDisplay(boolean i);
+  //  virtual void invertDisplay(boolean i);
 
   // BASIC DRAW API
   // These MAY be overridden by the subclass to provide device-specific
