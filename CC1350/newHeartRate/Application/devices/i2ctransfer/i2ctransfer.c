@@ -27,8 +27,8 @@ void I2c_ReadRegister(int8_t SlaveID, int8_t RegisterAddress, uint8_t *Data, uin
 
 void I2c_WriteRegister( int8_t SlaveID, int8_t RegisterAddress, uint8_t *Data, uint8_t len){
     uint8_t writeBuffer[20];
-    uint8_t i;
     writeBuffer[0] = RegisterAddress;
+    uint8_t i;
     for(i=0;i<len;i++)
         writeBuffer[i+1] = *(Data+i);
     i2cTransaction.slaveAddress = SlaveID;

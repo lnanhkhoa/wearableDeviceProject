@@ -1,16 +1,15 @@
 /******************************************************************************
 
- @file  scanparamservice.h
+ @file  oad.h
 
- @brief This file contains the Scan Parameters Service definitions and
-        prototypes.
+ @brief This file contains OAD Profile header file.
 
  Group: WCS, BTS
- Target Device: CC2650, CC2640, CC1350
+ Target Device: CC1350
 
  ******************************************************************************
  
- Copyright (c) 2011-2016, Texas Instruments Incorporated
+ Copyright (c) 2012-2017, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -41,12 +40,11 @@
  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
  ******************************************************************************
- Release Name: ble_sdk_2_02_01_18
- Release Date: 2016-10-26 15:20:04
+ Release Name: ti-ble-2.3.1-stack-sdk_1_60_xx
+ Release Date: 2017-12-16 12:03:51
  *****************************************************************************/
-
-#ifndef SCANPARAMSERVICE_H
-#define SCANPARAMSERVICE_H
+#ifndef OAD_H
+#define OAD_H
 
 #ifdef __cplusplus
 extern "C"
@@ -60,103 +58,116 @@ extern "C"
 /*********************************************************************
  * CONSTANTS
  */
+#define OAD_SERVICE_UUID       0xFFC0
+#define OAD_IMG_IDENTIFY_UUID  0xFFC1
+#define OAD_IMG_BLOCK_UUID     0xFFC2
+#define OAD_IMG_COUNT_UUID     0xFFC3
+#define OAD_IMG_STATUS_UUID    0xFFC4
 
-// Scan Characteristic Lengths
-#define SCAN_INTERVAL_WINDOW_CHAR_LEN     4
-#define SCAN_PARAM_REFRESH_LEN            1
+#define OAD_RESET_SERVICE_UUID 0xFFD0
+#define OAD_RESET_CHAR_UUID    0xFFD1
 
-// Scan Parameter Refresh Values
-#define SCAN_PARAM_REFRESH_REQ            0x00
+// OAD Characteristic Indices
+#define OAD_IDX_IMG_IDENTIFY   0
+#define OAD_IDX_IMG_BLOCK      1
+#define OAD_IDX_IMG_COUNT      2
+#define OAD_IDX_IMG_STATUS     3
 
-// Callback events
-#define SCAN_INTERVAL_WINDOW_SET          1
-
-// Get/Set parameters
-#define SCAN_PARAM_PARAM_INTERVAL         0
-#define SCAN_PARAM_PARAM_WINDOW           1
-
-/*********************************************************************
- * TYPEDEFS
- */
+// Number of characteristics in the service
+#define OAD_CHAR_CNT           4
 
 /*********************************************************************
  * MACROS
  */
 
 /*********************************************************************
+ * TYPEDEFS
+ */
+
+
+/*********************************************************************
+ * EXTERNAL VARIABLES
+ */
+
+/*********************************************************************
  * Profile Callbacks
  */
 
-// Scan Parameters Service callback function
-typedef void (*scanParamServiceCB_t)(uint8 event);
+// Callback when a characteristic value has changed
+typedef void (*oadWriteCB_t)(uint8_t event, uint16_t connHandle,
+                             uint8_t *pData);
+
+typedef struct
+{
+  oadWriteCB_t       pfnOadWrite; // Called when characteristic value changes.
+} oadTargetCBs_t;
 
 /*********************************************************************
- * API FUNCTIONS 
+ * FUNCTIONS
  */
 
 /*********************************************************************
- * @fn      ScanParam_AddService
+ * @fn      OAD_addService
  *
- * @brief   Initializes the Service by registering
- *          GATT attributes with the GATT server.
+ * @brief   Initializes the OAD Service by registering GATT attributes
+ *          with the GATT server. Only call this function once.
+ *
+ * @param   None.
  *
  * @return  Success or Failure
  */
-extern bStatus_t ScanParam_AddService(void);
+extern uint8_t OAD_addService(void);
+
+#ifdef IMAGE_INVALIDATE
+/*********************************************************************
+ * @fn      Reset_addService
+ *
+ * @brief   Initializes the Reset Service by registering GATT attributes
+ *          with the GATT server. Only call this function once.
+ *
+ * @param   None.
+ *
+ * @return  Success or Failure
+ */
+extern uint8_t Reset_addService(void);
+#endif // IMAGE_INVALIDATE
 
 /*********************************************************************
- * @fn      ScanParam_Register
+ * @fn      OAD_register
  *
- * @brief   Register a callback function with the Scan Parameters Service.
+ * @brief   Register a callback function with the OAD Target Profile.
  *
- * @param   pfnServiceCB - Callback function.
+ * @param   pfnOadCBs - struct holding function pointers to OAD application
+ *                      callbacks.
  *
  * @return  None.
  */
-extern void ScanParam_Register(scanParamServiceCB_t pfnServiceCB);
+extern void OAD_register(oadTargetCBs_t *pfnOadCBs);
 
 /*********************************************************************
- * @fn      ScanParam_SetParameter
+ * @fn      OAD_imgIdentifyWrite
  *
- * @brief   Set a Scan Parameters Service parameter.
+ * @brief   Process the Image Identify Write.  Determine from the received OAD
+ *          Image Header if the Downloaded Image should be acquired.
  *
- * @param   param - Profile parameter ID
- * @param   len - length of data to right
- * @param   value - pointer to data to write.  This is dependent on
- *          the parameter ID and WILL be cast to the appropriate 
- *          data type (example: data type of uint16 will be cast to 
- *          uint16 pointer).
+ * @param   connHandle - connection message was received on
+ * @param   pValue     - pointer to data to be written
  *
- * @return  bStatus_t
+ * @return  None.
  */
-extern bStatus_t ScanParam_SetParameter(uint8 param, uint8 len, void *value);
-  
-/*********************************************************************
- * @fn      ScanParam_GetParameter
- *
- * @brief   Get a Scan Parameters Service parameter.
- *
- * @param   param - Profile parameter ID
- * @param   value - pointer to data to get.  This is dependent on
- *          the parameter ID and WILL be cast to the appropriate 
- *          data type (example: data type of uint16 will be cast to 
- *          uint16 pointer).
- *
- * @return  bStatus_t
- */
-extern bStatus_t ScanParam_GetParameter(uint8 param, void *value);
+extern void OAD_imgIdentifyWrite(uint16 connHandle, uint8 *pValue);
 
 /*********************************************************************
- * @fn      ScanParam_RefreshNotify
+ * @fn      OAD_imgBlockWrite
  *
- * @brief   Notify the peer to refresh the scan parameters.
+ * @brief   Process the Image Block Write.
  *
- * @param   connHandle - connection handle
+ * @param   connHandle - connection message was received on
+ * @param   pValue     - pointer to data to be written
  *
- * @return  None
+ * @return  None.
  */
-extern void ScanParam_RefreshNotify(uint16 connHandle);
-
+extern void OAD_imgBlockWrite(uint16 connHandle, uint8 *pValue);
 
 /*********************************************************************
 *********************************************************************/
@@ -165,4 +176,4 @@ extern void ScanParam_RefreshNotify(uint16 connHandle);
 }
 #endif
 
-#endif /* SCANPARAMSERVICE_H */
+#endif /* OAD_H */

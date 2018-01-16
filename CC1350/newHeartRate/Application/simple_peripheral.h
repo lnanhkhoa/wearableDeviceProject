@@ -1,16 +1,16 @@
 /******************************************************************************
 
- @file  heart_rate.h
+ @file  simple_peripheral.h
 
- @brief This file contains the Heart Rate sample application definitions and
-        prototypes.
+ @brief This file contains the Simple BLE Peripheral sample application
+        definitions and prototypes.
 
  Group: WCS, BTS
- Target Device: CC2650, CC2640, CC1350
+ Target Device: CC1350
 
  ******************************************************************************
  
- Copyright (c) 2014-2016, Texas Instruments Incorporated
+ Copyright (c) 2013-2017, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -41,12 +41,12 @@
  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
  ******************************************************************************
- Release Name: ble_sdk_2_02_01_18
- Release Date: 2016-10-26 15:20:04
+ Release Name: ti-ble-2.3.1-stack-sdk_1_60_xx
+ Release Date: 2017-12-16 12:03:51
  *****************************************************************************/
 
-#ifndef HEARTRATE_H
-#define HEARTRATE_H
+#ifndef SIMPLEBLEPERIPHERAL_H
+#define SIMPLEBLEPERIPHERAL_H
 
 #ifdef __cplusplus
 extern "C"
@@ -58,30 +58,32 @@ extern "C"
  */
 
 /*********************************************************************
+*  EXTERNAL VARIABLES
+*/
+
+/*********************************************************************
  * CONSTANTS
  */
-   
+
 /*********************************************************************
  * MACROS
  */
-  
+
 /*********************************************************************
  * FUNCTIONS
  */
 
 /*
- * Task creation function for the Heart Rate.
+ * Task creation function for the Simple BLE Peripheral.
  */
-extern void HeartRate_createTask(void);
+extern void SimpleBLEPeripheral_createTask(void);
 
 
-/* API for any header files need */
-extern bool get_BLEState(void);
-
-/*********************************************************************/
+/*********************************************************************
+*********************************************************************/
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* HEARTRATE_H */
+#endif /* SIMPLEBLEPERIPHERAL_H */

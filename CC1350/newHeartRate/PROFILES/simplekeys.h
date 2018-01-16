@@ -40,8 +40,8 @@
  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
  ******************************************************************************
- Release Name: ti-ble-2.3.2-stack-sdk_1_50_xx
- Release Date: 2017-09-27 14:52:17
+ Release Name: ti-ble-2.3.1-stack-sdk_1_60_xx
+ Release Date: 2017-12-16 12:03:51
  *****************************************************************************/
 
 #ifndef SIMPLEKEYS_H

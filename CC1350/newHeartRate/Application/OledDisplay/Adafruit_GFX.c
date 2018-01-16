@@ -48,7 +48,6 @@ boolean wrap,   // If set, 'wrap' text at right edge of display
       _cp437; // If set, use correct CP437 charset (default is off)
 GFXfont *gfxFont;
 
-
 /* Pointer to function*/
 
 void (*P_drawPixel)(int16_t , int16_t , uint16_t );

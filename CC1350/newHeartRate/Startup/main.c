@@ -58,9 +58,9 @@
 #include "hal_assert.h"
 #include "bcomdef.h"
 #include "peripheral.h"
-#include "Application/heart_rate.h"
-#include "Application/wearableDevice.h"
+#include "simple_peripheral.h"
 
+#include "Application/wearableDevice.h"
 /* Header files required to enable instruction fetch cache */
 #include <inc/hw_memmap.h>
 #include <driverlib/vims.h>
@@ -205,9 +205,8 @@ int main()
   /* Kick off profile - Priority 3 */
   GAPRole_createTask();
 
-  HeartRate_createTask();
+  SimpleBLEPeripheral_createTask();
   wearableDevice_init();
-
   /* enable interrupts and start SYS/BIOS */
   BIOS_start();
 

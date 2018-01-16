@@ -124,37 +124,26 @@ typedef uint32_t PortMask;
     void AdafruitSSD1306_init( int8_t RST);
 
     void AdafruitSSD1306_begin(int8_t vccstate, int8_t i2caddr, bool reset);
-    void ssd1306_command(uint8_t c);
+    static void ssd1306_command(uint8_t c);
 
     void AdafruitSSD1306_clearDisplay(void);
     void AdafruitSSD1306_invertDisplay(uint8_t i);
     void AdafruitSSD1306_display(void);
     void AdafruitSSD1306_displayPage(uint8_t startPage, uint8_t endPage);
 
-    void AdafruitSSD1306_startscrollright(uint8_t start, uint8_t stop);
-    void AdafruitSSD1306_startscrollleft(uint8_t start, uint8_t stop);
-
-    void AdafruitSSD1306_startscrolldiagright(uint8_t start, uint8_t stop);
-    void AdafruitSSD1306_startscrolldiagleft(uint8_t start, uint8_t stop);
-    void AdafruitSSD1306_stopscroll(void);
-
     void AdafruitSSD1306_dim(bool dim);
     void AdafruitSSD1306_onoff(bool mode);
     uint8_t *AdafruitSSD1306_getbuffer(void);
 
     void AdafruitSSD1306_drawPixel(int16_t x, int16_t y, uint16_t color);
-
     void AdafruitSSD1306_drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);
     void AdafruitSSD1306_drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);
     void AdafruitSSD1306_fastSPIwrite(uint8_t c);
-
     void AdafruitSSD1306_drawFastVLineInternal(int16_t x, int16_t y, int16_t h, uint16_t color) __attribute__((always_inline));
     void AdafruitSSD1306_drawFastHLineInternal(int16_t x, int16_t y, int16_t w, uint16_t color) __attribute__((always_inline));
 
 /*************************************************************************************************************************************/
     void AdafruitSSD1306_drawBitmap(int16_t x, int16_t y, const unsigned char *bitmap, int16_t w, int16_t h, uint16_t color, uint16_t bg);
-
-    
 
     void AdafruitSSD1306_setCursor(int16_t x, int16_t y);
     void AdafruitSSD1306_setTextColor(uint16_t c);
@@ -163,7 +152,7 @@ typedef uint32_t PortMask;
     void AdafruitSSD1306_print(uint8_t *str);
     void AdafruitSSD1306_printc(char c);
 
-    int16_t AdafruitSSD1306_height(void);
-    int16_t AdafruitSSD1306_width(void);
+    static int16_t AdafruitSSD1306_height(void);
+    static int16_t AdafruitSSD1306_width(void);
 
 #endif /* _AdafruitSSD1306_H_ */

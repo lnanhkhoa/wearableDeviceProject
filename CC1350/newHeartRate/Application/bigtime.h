@@ -6,10 +6,15 @@
 #ifndef __BIGTIME_H__
 #define __BIGTIME_H__
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 /* data */
 
     void Clock_init(int newId);  // Constructor
-
+    void Clock_updateTime(uint8_t *newDateTime);
     void Clock_TimerDim(uint8_t count);
     int Clock_getId();
     int Clock_getMicrosecond();
@@ -34,5 +39,9 @@
     void Clock_setYear();
     void Clock_setCentury();
     void Clock_setMillenium();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -76,6 +76,21 @@ void Clock_init(int newId)
 
 }
 
+void Clock_updateTime(uint8_t *newDateTime){
+    // ss, mm, hh, dd, mm, yy,cc
+    microsecond = 0;
+    millisecond = 0;
+    second = *(newDateTime);
+    minute = *(newDateTime +1);
+    hour = *(newDateTime +2);
+    day = *(newDateTime +3);
+    month = *(newDateTime +4);
+    year = *(newDateTime +5);
+    century = *(newDateTime +6);
+    millenium = 0;
+}
+
+
 void Clock_setMicrosecond()
 {
     if (microsecond >= 999) {

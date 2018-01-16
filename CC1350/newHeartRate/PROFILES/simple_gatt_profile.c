@@ -6,11 +6,11 @@
         for use with the BLE sample application.
 
  Group: WCS, BTS
- Target Device: CC2650, CC2640, CC1350
+ Target Device: CC1350
 
  ******************************************************************************
  
- Copyright (c) 2010-2016, Texas Instruments Incorporated
+ Copyright (c) 2010-2017, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -41,14 +41,13 @@
  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
  ******************************************************************************
- Release Name: ble_sdk_2_02_00_31
- Release Date: 2016-06-16 18:57:29
+ Release Name: ti-ble-2.3.1-stack-sdk_1_60_xx
+ Release Date: 2017-12-16 12:03:51
  *****************************************************************************/
 
 /*********************************************************************
  * INCLUDES
  */
-
 #include <string.h>
 
 #include "bcomdef.h"
@@ -60,7 +59,7 @@
 #include "gattservapp.h"
 #include "gapbondmgr.h"
 
-#include "Apedometer.h"
+#include "simple_gatt_profile.h"
 
 /*********************************************************************
  * MACROS
@@ -70,7 +69,7 @@
  * CONSTANTS
  */
 
-#define SERVAPP_NUM_ATTR_SUPPORTED        21
+#define SERVAPP_NUM_ATTR_SUPPORTED        17
 
 /*********************************************************************
  * TYPEDEFS
@@ -80,21 +79,39 @@
  * GLOBAL VARIABLES
  */
 // Simple GATT Profile Service UUID: 0xFFF0
-CONST uint8 pedometerServUUID[ATT_BT_UUID_SIZE] =
+CONST uint8 simpleProfileServUUID[ATT_BT_UUID_SIZE] =
 { 
-  LO_UINT16(PEDOMETER_SERV_UUID), HI_UINT16(PEDOMETER_SERV_UUID)
+  LO_UINT16(SIMPLEPROFILE_SERV_UUID), HI_UINT16(SIMPLEPROFILE_SERV_UUID)
 };
 
 // Characteristic 1 UUID: 0xFFF1
-CONST uint8 pedometerchar1UUID[ATT_BT_UUID_SIZE] =
+CONST uint8 simpleProfilechar1UUID[ATT_BT_UUID_SIZE] =
 { 
-  LO_UINT16(PEDOMETER_CHAR1_UUID), HI_UINT16(PEDOMETER_CHAR1_UUID)
+  LO_UINT16(SIMPLEPROFILE_CHAR1_UUID), HI_UINT16(SIMPLEPROFILE_CHAR1_UUID)
 };
 
 // Characteristic 2 UUID: 0xFFF2
-CONST uint8 pedometerchar2UUID[ATT_BT_UUID_SIZE] =
+CONST uint8 simpleProfilechar2UUID[ATT_BT_UUID_SIZE] =
 { 
-  LO_UINT16(PEDOMETER_CHAR2_UUID), HI_UINT16(PEDOMETER_CHAR2_UUID)
+  LO_UINT16(SIMPLEPROFILE_CHAR2_UUID), HI_UINT16(SIMPLEPROFILE_CHAR2_UUID)
+};
+
+// Characteristic 3 UUID: 0xFFF3
+CONST uint8 simpleProfilechar3UUID[ATT_BT_UUID_SIZE] =
+{ 
+  LO_UINT16(SIMPLEPROFILE_CHAR3_UUID), HI_UINT16(SIMPLEPROFILE_CHAR3_UUID)
+};
+
+// Characteristic 4 UUID: 0xFFF4
+CONST uint8 simpleProfilechar4UUID[ATT_BT_UUID_SIZE] =
+{ 
+  LO_UINT16(SIMPLEPROFILE_CHAR4_UUID), HI_UINT16(SIMPLEPROFILE_CHAR4_UUID)
+};
+
+// Characteristic 5 UUID: 0xFFF5
+CONST uint8 simpleProfilechar5UUID[ATT_BT_UUID_SIZE] =
+{ 
+  LO_UINT16(SIMPLEPROFILE_CHAR5_UUID), HI_UINT16(SIMPLEPROFILE_CHAR5_UUID)
 };
 
 /*********************************************************************
@@ -109,48 +126,83 @@ CONST uint8 pedometerchar2UUID[ATT_BT_UUID_SIZE] =
  * LOCAL VARIABLES
  */
 
-static pedometerCBs_t *pedometer_AppCBs = NULL;
+static simpleProfileCBs_t *simpleProfile_AppCBs = NULL;
 
 /*********************************************************************
  * Profile Attributes - variables
  */
 
 // Simple Profile Service attribute
-static CONST gattAttrType_t pedometerService = { ATT_BT_UUID_SIZE, pedometerServUUID };
+static CONST gattAttrType_t simpleProfileService = { ATT_BT_UUID_SIZE, simpleProfileServUUID };
 
 
 // Simple Profile Characteristic 1 Properties
-static uint8 pedometerChar1Props = GATT_PROP_READ;
+static uint8 simpleProfileChar1Props = GATT_PROP_READ | GATT_PROP_WRITE;
 
 // Characteristic 1 Value
-static uint8 pedometerChar1[PEDOMETER_CHAR1_LEN] = {0x03, 0x23, 0x06};
+static uint8 simpleProfileChar1 = 0;
 
 // Simple Profile Characteristic 1 User Description
-static uint8 pedometerChar1UserDesp[30] = "step.distance.calo";
+static uint8 simpleProfileChar1UserDesp[17] = "Characteristic 1";
 
 
 // Simple Profile Characteristic 2 Properties
-static uint8 pedometerChar2Props = GATT_PROP_READ;
+static uint8 simpleProfileChar2Props = GATT_PROP_READ;
 
 // Characteristic 2 Value
-static uint8 pedometerChar2[PEDOMETER_CHAR2_LEN] = {0x01, 0x02};
+static uint8 simpleProfileChar2 = 0;
 
 // Simple Profile Characteristic 2 User Description
-static uint8 pedometerChar2UserDesp[17] = "Characteristic 2";
+static uint8 simpleProfileChar2UserDesp[17] = "Characteristic 2";
 
+
+// Simple Profile Characteristic 3 Properties
+static uint8 simpleProfileChar3Props = GATT_PROP_WRITE;
+
+// Characteristic 3 Value
+static uint8 simpleProfileChar3 = 0;
+
+// Simple Profile Characteristic 3 User Description
+static uint8 simpleProfileChar3UserDesp[17] = "Characteristic 3";
+
+
+// Simple Profile Characteristic 4 Properties
+static uint8 simpleProfileChar4Props = GATT_PROP_NOTIFY;
+
+// Characteristic 4 Value
+static uint8 simpleProfileChar4 = 0;
+
+// Simple Profile Characteristic 4 Configuration Each client has its own
+// instantiation of the Client Characteristic Configuration. Reads of the
+// Client Characteristic Configuration only shows the configuration for
+// that client and writes only affect the configuration of that client.
+static gattCharCfg_t *simpleProfileChar4Config;
+                                        
+// Simple Profile Characteristic 4 User Description
+static uint8 simpleProfileChar4UserDesp[17] = "Characteristic 4";
+
+
+// Simple Profile Characteristic 5 Properties
+static uint8 simpleProfileChar5Props = GATT_PROP_READ;
+
+// Characteristic 5 Value
+static uint8 simpleProfileChar5[SIMPLEPROFILE_CHAR5_LEN] = { 0, 0, 0, 0, 0 };
+
+// Simple Profile Characteristic 5 User Description
+static uint8 simpleProfileChar5UserDesp[17] = "Characteristic 5";
 
 /*********************************************************************
  * Profile Attributes - Table
  */
 
-static gattAttribute_t pedometerAttrTbl[] =
+static gattAttribute_t simpleProfileAttrTbl[SERVAPP_NUM_ATTR_SUPPORTED] = 
 {
   // Simple Profile Service
   { 
     { ATT_BT_UUID_SIZE, primaryServiceUUID }, /* type */
     GATT_PERMIT_READ,                         /* permissions */
     0,                                        /* handle */
-    (uint8 *)&pedometerService            /* pValue */
+    (uint8 *)&simpleProfileService            /* pValue */
   },
 
     // Characteristic 1 Declaration
@@ -158,15 +210,15 @@ static gattAttribute_t pedometerAttrTbl[] =
       { ATT_BT_UUID_SIZE, characterUUID },
       GATT_PERMIT_READ, 
       0,
-      &pedometerChar1Props 
+      &simpleProfileChar1Props 
     },
 
       // Characteristic Value 1
       { 
-        { ATT_BT_UUID_SIZE, pedometerchar1UUID },
-        GATT_PERMIT_READ, 
+        { ATT_BT_UUID_SIZE, simpleProfilechar1UUID },
+        GATT_PERMIT_READ | GATT_PERMIT_WRITE, 
         0, 
-        (uint8 *) pedometerChar1 
+        &simpleProfileChar1 
       },
 
       // Characteristic 1 User Description
@@ -174,7 +226,7 @@ static gattAttribute_t pedometerAttrTbl[] =
         { ATT_BT_UUID_SIZE, charUserDescUUID },
         GATT_PERMIT_READ, 
         0, 
-        pedometerChar1UserDesp 
+        simpleProfileChar1UserDesp 
       },      
 
     // Characteristic 2 Declaration
@@ -182,15 +234,15 @@ static gattAttribute_t pedometerAttrTbl[] =
       { ATT_BT_UUID_SIZE, characterUUID },
       GATT_PERMIT_READ, 
       0,
-      &pedometerChar2Props 
+      &simpleProfileChar2Props 
     },
 
       // Characteristic Value 2
       { 
-        { ATT_BT_UUID_SIZE, pedometerchar2UUID },
+        { ATT_BT_UUID_SIZE, simpleProfilechar2UUID },
         GATT_PERMIT_READ, 
         0, 
-        (uint8 *)pedometerChar2 
+        &simpleProfileChar2 
       },
 
       // Characteristic 2 User Description
@@ -198,19 +250,99 @@ static gattAttribute_t pedometerAttrTbl[] =
         { ATT_BT_UUID_SIZE, charUserDescUUID },
         GATT_PERMIT_READ, 
         0, 
-        pedometerChar2UserDesp 
+        simpleProfileChar2UserDesp 
       },           
+      
+    // Characteristic 3 Declaration
+    { 
+      { ATT_BT_UUID_SIZE, characterUUID },
+      GATT_PERMIT_READ, 
+      0,
+      &simpleProfileChar3Props 
+    },
+
+      // Characteristic Value 3
+      { 
+        { ATT_BT_UUID_SIZE, simpleProfilechar3UUID },
+        GATT_PERMIT_WRITE, 
+        0, 
+        &simpleProfileChar3 
+      },
+
+      // Characteristic 3 User Description
+      { 
+        { ATT_BT_UUID_SIZE, charUserDescUUID },
+        GATT_PERMIT_READ, 
+        0, 
+        simpleProfileChar3UserDesp 
+      },
+
+    // Characteristic 4 Declaration
+    { 
+      { ATT_BT_UUID_SIZE, characterUUID },
+      GATT_PERMIT_READ, 
+      0,
+      &simpleProfileChar4Props 
+    },
+
+      // Characteristic Value 4
+      { 
+        { ATT_BT_UUID_SIZE, simpleProfilechar4UUID },
+        0, 
+        0, 
+        &simpleProfileChar4 
+      },
+
+      // Characteristic 4 configuration
+      { 
+        { ATT_BT_UUID_SIZE, clientCharCfgUUID },
+        GATT_PERMIT_READ | GATT_PERMIT_WRITE, 
+        0, 
+        (uint8 *)&simpleProfileChar4Config 
+      },
+      
+      // Characteristic 4 User Description
+      { 
+        { ATT_BT_UUID_SIZE, charUserDescUUID },
+        GATT_PERMIT_READ, 
+        0, 
+        simpleProfileChar4UserDesp 
+      },
+      
+    // Characteristic 5 Declaration
+    { 
+      { ATT_BT_UUID_SIZE, characterUUID },
+      GATT_PERMIT_READ, 
+      0,
+      &simpleProfileChar5Props 
+    },
+
+      // Characteristic Value 5
+      { 
+        { ATT_BT_UUID_SIZE, simpleProfilechar5UUID },
+        GATT_PERMIT_AUTHEN_READ, 
+        0, 
+        simpleProfileChar5 
+      },
+
+      // Characteristic 5 User Description
+      { 
+        { ATT_BT_UUID_SIZE, charUserDescUUID },
+        GATT_PERMIT_READ, 
+        0, 
+        simpleProfileChar5UserDesp 
+      },
 };
 
 /*********************************************************************
  * LOCAL FUNCTIONS
  */
-static bStatus_t pedometer_ReadAttrCB(uint16_t connHandle,
+static bStatus_t simpleProfile_ReadAttrCB(uint16_t connHandle,
                                           gattAttribute_t *pAttr, 
                                           uint8_t *pValue, uint16_t *pLen,
                                           uint16_t offset, uint16_t maxLen,
                                           uint8_t method);
-static bStatus_t pedometer_WriteAttrCB(uint16_t connHandle,
+static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
                                            gattAttribute_t *pAttr,
                                            uint8_t *pValue, uint16_t len,
                                            uint16_t offset, uint8_t method);
@@ -227,10 +359,10 @@ static bStatus_t pedometer_WriteAttrCB(uint16_t connHandle,
 // pfnAuthorizeAttrCB to check a client's authorization prior to calling
 // pfnReadAttrCB or pfnWriteAttrCB, so no checks for authorization need to be 
 // made within these functions.
-CONST gattServiceCBs_t pedometerCBs =
+CONST gattServiceCBs_t simpleProfileCBs =
 {
-  pedometer_ReadAttrCB,  // Read callback function pointer
-  pedometer_WriteAttrCB, // Write callback function pointer
+  simpleProfile_ReadAttrCB,  // Read callback function pointer
+  simpleProfile_WriteAttrCB, // Write callback function pointer
   NULL                       // Authorization callback function pointer
 };
 
@@ -239,7 +371,7 @@ CONST gattServiceCBs_t pedometerCBs =
  */
 
 /*********************************************************************
- * @fn      Pedometer_AddService
+ * @fn      SimpleProfile_AddService
  *
  * @brief   Initializes the Simple Profile service by registering
  *          GATT attributes with the GATT server.
@@ -249,17 +381,28 @@ CONST gattServiceCBs_t pedometerCBs =
  *
  * @return  Success or Failure
  */
-bStatus_t Pedometer_AddService( uint32 services )
+bStatus_t SimpleProfile_AddService( uint32 services )
 {
   uint8 status;
+
+  // Allocate Client Characteristic Configuration table
+  simpleProfileChar4Config = (gattCharCfg_t *)ICall_malloc( sizeof(gattCharCfg_t) *
+                                                            linkDBNumConns );
+  if ( simpleProfileChar4Config == NULL )
+  {     
+    return ( bleMemAllocError );
+  }
   
-  if ( services & PEDOMETER_SERVICE )
+  // Initialize Client Characteristic Configuration attributes
+  GATTServApp_InitCharCfg( INVALID_CONNHANDLE, simpleProfileChar4Config );
+  
+  if ( services & SIMPLEPROFILE_SERVICE )
   {
     // Register GATT attribute list and CBs with GATT Server App
-    status = GATTServApp_RegisterService( pedometerAttrTbl, 
-                                          GATT_NUM_ATTRS( pedometerAttrTbl ),
+    status = GATTServApp_RegisterService( simpleProfileAttrTbl, 
+                                          GATT_NUM_ATTRS( simpleProfileAttrTbl ),
                                           GATT_MAX_ENCRYPT_KEY_SIZE,
-                                          &pedometerCBs );
+                                          &simpleProfileCBs );
   }
   else
   {
@@ -270,7 +413,7 @@ bStatus_t Pedometer_AddService( uint32 services )
 }
 
 /*********************************************************************
- * @fn      Pedometer_RegisterAppCBs
+ * @fn      SimpleProfile_RegisterAppCBs
  *
  * @brief   Registers the application callback function. Only call 
  *          this function once.
@@ -279,11 +422,11 @@ bStatus_t Pedometer_AddService( uint32 services )
  *
  * @return  SUCCESS or bleAlreadyInRequestedMode
  */
-bStatus_t Pedometer_RegisterAppCBs( pedometerCBs_t *appCallbacks )
+bStatus_t SimpleProfile_RegisterAppCBs( simpleProfileCBs_t *appCallbacks )
 {
   if ( appCallbacks )
   {
-    pedometer_AppCBs = appCallbacks;
+    simpleProfile_AppCBs = appCallbacks;
     
     return ( SUCCESS );
   }
@@ -294,7 +437,7 @@ bStatus_t Pedometer_RegisterAppCBs( pedometerCBs_t *appCallbacks )
 }
 
 /*********************************************************************
- * @fn      Pedometer_SetParameter
+ * @fn      SimpleProfile_SetParameter
  *
  * @brief   Set a Simple Profile parameter.
  *
@@ -307,16 +450,15 @@ bStatus_t Pedometer_RegisterAppCBs( pedometerCBs_t *appCallbacks )
  *
  * @return  bStatus_t
  */
-bStatus_t Pedometer_SetParameter( uint8 param, uint8 len, void *value )
+bStatus_t SimpleProfile_SetParameter( uint8 param, uint8 len, void *value )
 {
   bStatus_t ret = SUCCESS;
   switch ( param )
   {
-    case PEDOMETER_CHAR1:
-      if ( len <= PEDOMETER_CHAR1_LEN ) 
+    case SIMPLEPROFILE_CHAR1:
+      if ( len == sizeof ( uint8 ) ) 
       {
-        memset(pedometerChar1, 0, PEDOMETER_CHAR1_LEN+1);
-        memcpy(pedometerChar1, value, len);
+        simpleProfileChar1 = *((uint8*)value);
       }
       else
       {
@@ -324,11 +466,48 @@ bStatus_t Pedometer_SetParameter( uint8 param, uint8 len, void *value )
       }
       break;
 
-    case PEDOMETER_CHAR2:
-      if ( len <= PEDOMETER_CHAR2_LEN ) 
+    case SIMPLEPROFILE_CHAR2:
+      if ( len == sizeof ( uint8 ) ) 
       {
-        memset(pedometerChar2, 0, PEDOMETER_CHAR2_LEN+1);
-        memcpy(pedometerChar2, value, len);
+        simpleProfileChar2 = *((uint8*)value);
+      }
+      else
+      {
+        ret = bleInvalidRange;
+      }
+      break;
+
+    case SIMPLEPROFILE_CHAR3:
+      if ( len == sizeof ( uint8 ) ) 
+      {
+        simpleProfileChar3 = *((uint8*)value);
+      }
+      else
+      {
+        ret = bleInvalidRange;
+      }
+      break;
+
+    case SIMPLEPROFILE_CHAR4:
+      if ( len == sizeof ( uint8 ) ) 
+      {
+        simpleProfileChar4 = *((uint8*)value);
+        
+        // See if Notification has been enabled
+        GATTServApp_ProcessCharCfg( simpleProfileChar4Config, &simpleProfileChar4, FALSE,
+                                    simpleProfileAttrTbl, GATT_NUM_ATTRS( simpleProfileAttrTbl ),
+                                    INVALID_TASK_ID, simpleProfile_ReadAttrCB );
+      }
+      else
+      {
+        ret = bleInvalidRange;
+      }
+      break;
+
+    case SIMPLEPROFILE_CHAR5:
+      if ( len == SIMPLEPROFILE_CHAR5_LEN ) 
+      {
+        VOID memcpy( simpleProfileChar5, value, SIMPLEPROFILE_CHAR5_LEN );
       }
       else
       {
@@ -345,7 +524,7 @@ bStatus_t Pedometer_SetParameter( uint8 param, uint8 len, void *value )
 }
 
 /*********************************************************************
- * @fn      Pedometer_GetParameter
+ * @fn      SimpleProfile_GetParameter
  *
  * @brief   Get a Simple Profile parameter.
  *
@@ -357,19 +536,31 @@ bStatus_t Pedometer_SetParameter( uint8 param, uint8 len, void *value )
  *
  * @return  bStatus_t
  */
-bStatus_t Pedometer_GetParameter( uint8 param, void *value )
+bStatus_t SimpleProfile_GetParameter( uint8 param, void *value )
 {
   bStatus_t ret = SUCCESS;
   switch ( param )
   {
-    case PEDOMETER_CHAR1:
-      memcpy(value, pedometerChar1, sizeof(pedometerChar1));
+    case SIMPLEPROFILE_CHAR1:
+      *((uint8*)value) = simpleProfileChar1;
       break;
 
-    case PEDOMETER_CHAR2:
-      memcpy(value, pedometerChar1, sizeof(pedometerChar1));
+    case SIMPLEPROFILE_CHAR2:
+      *((uint8*)value) = simpleProfileChar2;
       break;      
 
+    case SIMPLEPROFILE_CHAR3:
+      *((uint8*)value) = simpleProfileChar3;
+      break;  
+
+    case SIMPLEPROFILE_CHAR4:
+      *((uint8*)value) = simpleProfileChar4;
+      break;
+
+    case SIMPLEPROFILE_CHAR5:
+      VOID memcpy( value, simpleProfileChar5, SIMPLEPROFILE_CHAR5_LEN );
+      break;      
+      
     default:
       ret = INVALIDPARAMETER;
       break;
@@ -379,7 +570,7 @@ bStatus_t Pedometer_GetParameter( uint8 param, void *value )
 }
 
 /*********************************************************************
- * @fn          pedometer_ReadAttrCB
+ * @fn          simpleProfile_ReadAttrCB
  *
  * @brief       Read an attribute.
  *
@@ -393,7 +584,7 @@ bStatus_t Pedometer_GetParameter( uint8 param, void *value )
  *
  * @return      SUCCESS, blePending or Failure
  */
-static bStatus_t pedometer_ReadAttrCB(uint16_t connHandle,
+static bStatus_t simpleProfile_ReadAttrCB(uint16_t connHandle,
                                           gattAttribute_t *pAttr,
                                           uint8_t *pValue, uint16_t *pLen,
                                           uint16_t offset, uint16_t maxLen,
@@ -421,41 +612,18 @@ static bStatus_t pedometer_ReadAttrCB(uint16_t connHandle,
       //   included here
       // characteristic 4 does not have read permissions, but because it
       //   can be sent as a notification, it is included here
-      case PEDOMETER_CHAR1_UUID:
-        {
-          uint8 len = sizeof(pedometerChar1);
-          // verify offset
-          if (offset > len)
-          {
-            status = ATT_ERR_INVALID_OFFSET;
-          }
-          else
-          {
-            // determine read length (exclude null terminating character)
-            *pLen = MIN(maxLen, (len - offset));
-            // copy data
-            memcpy(pValue, &(pAttr->pValue[offset]), *pLen);
-          }
-        }
+      case SIMPLEPROFILE_CHAR1_UUID:
+      case SIMPLEPROFILE_CHAR2_UUID:
+      case SIMPLEPROFILE_CHAR4_UUID:
+        *pLen = 1;
+        pValue[0] = *pAttr->pValue;
         break;
-      case PEDOMETER_CHAR2_UUID:
-        {
-          uint8 len = sizeof(pedometerChar2);
-          // verify offset
-          if (offset > len)
-          {
-            status = ATT_ERR_INVALID_OFFSET;
-          }
-          else
-          {
-            // determine read length (exclude null terminating character)
-            *pLen = MIN(maxLen, (len - offset));
-            // copy data
-            memcpy(pValue, &(pAttr->pValue[offset]), *pLen);
-          }
-        }
+
+      case SIMPLEPROFILE_CHAR5_UUID:
+        *pLen = SIMPLEPROFILE_CHAR5_LEN;
+        VOID memcpy( pValue, pAttr->pValue, SIMPLEPROFILE_CHAR5_LEN );
         break;
-      
+        
       default:
         // Should never get here! (characteristics 3 and 4 do not have read permissions)
         *pLen = 0;
@@ -474,7 +642,7 @@ static bStatus_t pedometer_ReadAttrCB(uint16_t connHandle,
 }
 
 /*********************************************************************
- * @fn      pedometer_WriteAttrCB
+ * @fn      simpleProfile_WriteAttrCB
  *
  * @brief   Validate attribute data prior to a write operation
  *
@@ -487,7 +655,7 @@ static bStatus_t pedometer_ReadAttrCB(uint16_t connHandle,
  *
  * @return  SUCCESS, blePending or Failure
  */
-static bStatus_t pedometer_WriteAttrCB(uint16_t connHandle,
+static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
                                            gattAttribute_t *pAttr,
                                            uint8_t *pValue, uint16_t len,
                                            uint16_t offset, uint8_t method)
@@ -501,7 +669,8 @@ static bStatus_t pedometer_WriteAttrCB(uint16_t connHandle,
     uint16 uuid = BUILD_UINT16( pAttr->type.uuid[0], pAttr->type.uuid[1]);
     switch ( uuid )
     {
-      case PEDOMETER_CHAR2_UUID:
+      case SIMPLEPROFILE_CHAR1_UUID:
+      case SIMPLEPROFILE_CHAR3_UUID:
 
         //Validate the value
         // Make sure it's not a blob oper
@@ -523,9 +692,13 @@ static bStatus_t pedometer_WriteAttrCB(uint16_t connHandle,
           uint8 *pCurValue = (uint8 *)pAttr->pValue;        
           *pCurValue = pValue[0];
 
-          if( pAttr->pValue == pedometerChar2 )
+          if( pAttr->pValue == &simpleProfileChar1 )
           {
-            notifyApp = PEDOMETER_CHAR2;        
+            notifyApp = SIMPLEPROFILE_CHAR1;        
+          }
+          else
+          {
+            notifyApp = SIMPLEPROFILE_CHAR3;           
           }
         }
              
@@ -549,9 +722,9 @@ static bStatus_t pedometer_WriteAttrCB(uint16_t connHandle,
   }
 
   // If a characteristic value changed then callback function to notify application of change
-  if ( (notifyApp != 0xFF ) && pedometer_AppCBs && pedometer_AppCBs->pfnPedometerChange )
+  if ( (notifyApp != 0xFF ) && simpleProfile_AppCBs && simpleProfile_AppCBs->pfnSimpleProfileChange )
   {
-    pedometer_AppCBs->pfnPedometerChange( notifyApp );  
+    simpleProfile_AppCBs->pfnSimpleProfileChange( notifyApp );  
   }
   
   return ( status );

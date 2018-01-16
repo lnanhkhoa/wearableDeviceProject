@@ -1,16 +1,16 @@
 /******************************************************************************
 
- @file  heartrateservice.h
+ @file  simple_gatt_profile.h
 
- @brief This file contains the Heart Rate service definitions and prototypes
+ @brief This file contains the Simple GATT profile definitions and prototypes
         prototypes.
 
  Group: WCS, BTS
- Target Device: CC2650, CC2640, CC1350
+ Target Device: CC1350
 
  ******************************************************************************
  
- Copyright (c) 2012-2016, Texas Instruments Incorporated
+ Copyright (c) 2010-2017, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -41,12 +41,12 @@
  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
  ******************************************************************************
- Release Name: ble_sdk_2_02_01_18
- Release Date: 2016-10-26 15:20:04
+ Release Name: ti-ble-2.3.1-stack-sdk_1_60_xx
+ Release Date: 2017-12-16 12:03:51
  *****************************************************************************/
 
-#ifndef HEARTRATESERVICE_H
-#define HEARTRATESERVICE_H
+#ifndef SIMPLEGATTPROFILE_H
+#define SIMPLEGATTPROFILE_H
 
 #ifdef __cplusplus
 extern "C"
@@ -61,63 +61,34 @@ extern "C"
  * CONSTANTS
  */
 
+// Profile Parameters
+#define SIMPLEPROFILE_CHAR1                   0  // RW uint8 - Profile Characteristic 1 value 
+#define SIMPLEPROFILE_CHAR2                   1  // RW uint8 - Profile Characteristic 2 value
+#define SIMPLEPROFILE_CHAR3                   2  // RW uint8 - Profile Characteristic 3 value
+#define SIMPLEPROFILE_CHAR4                   3  // RW uint8 - Profile Characteristic 4 value
+#define SIMPLEPROFILE_CHAR5                   4  // RW uint8 - Profile Characteristic 4 value
+  
+// Simple Profile Service UUID
+#define SIMPLEPROFILE_SERV_UUID               0xFFF0
+    
+// Key Pressed UUID
+#define SIMPLEPROFILE_CHAR1_UUID            0xFFF1
+#define SIMPLEPROFILE_CHAR2_UUID            0xFFF2
+#define SIMPLEPROFILE_CHAR3_UUID            0xFFF3
+#define SIMPLEPROFILE_CHAR4_UUID            0xFFF4
+#define SIMPLEPROFILE_CHAR5_UUID            0xFFF5
+  
+// Simple Keys Profile Services bit fields
+#define SIMPLEPROFILE_SERVICE               0x00000001
 
-// Heart Rate Service Parameters
-#define HEARTRATE_SENS_LOC                  0
-#define HEARTRATE_COMMAND                   1
-#define HEARTRATE_VALUE 	                  2
-#define HEARTRATE_MEASURE                   3
-#define HEARTRATE_MEASURE_CHAR_CFG          4
-
-#define	HEARTRATE_VALUE_UUID 								0x2A3A
-#define	HEARTRATE_MEASURE_UUID 				   		0x2A3B
-
-// Length of Characteristic in bytes
-#define HEARTRATE_VALUE_LEN									3
-#define HEARTRATE_VALUE_MEASUREMENT_LEN			13
-
-// Maximum length of heart rate measurement characteristic
-#define HEARTRATE_MEAS_MAX                  (ATT_MTU_SIZE -5)
-
-// Values for flags
-#define HEARTRATE_FLAGS_FORMAT_UINT16       0x01
-#define HEARTRATE_FLAGS_CONTACT_NOT_SUP     0x00
-#define HEARTRATE_FLAGS_CONTACT_NOT_DET     0x04
-#define HEARTRATE_FLAGS_CONTACT_DET         0x06
-#define HEARTRATE_FLAGS_ENERGY_EXP          0x08
-#define HEARTRATE_FLAGS_RR                  0x10
-
-// Values for sensor location
-#define HEARTRATE_SENS_LOC_OTHER            0x00
-#define HEARTRATE_SENS_LOC_CHEST            0x01
-#define HEARTRATE_SENS_LOC_WRIST            0x02
-#define HEARTRATE_SENS_LOC_FINGER           0x03
-#define HEARTRATE_SENS_LOC_HAND             0x04
-#define HEARTRATE_SENS_LOC_EARLOBE          0x05
-#define HEARTRATE_SENS_LOC_FOOT             0x06
-
-// Value for command characteristic
-#define HEARTRATE_COMMAND_ENERGY_EXP        0x01
-
-// ATT Error code
-// Control point value not supported
-#define HEARTRATE_ERR_NOT_SUP               0x80
-
-// Heart Rate Service bit fields
-#define HEARTRATE_SERVICE                   0x00000001
-
-// Callback events
-#define HEARTRATE_MEAS_NOTI_ENABLED         1
-#define HEARTRATE_MEAS_NOTI_DISABLED        2
-#define HEARTRATE_COMMAND_SET               3
+// Length of Characteristic 5 in bytes
+#define SIMPLEPROFILE_CHAR5_LEN           5  
 
 /*********************************************************************
  * TYPEDEFS
  */
 
-// Heart Rate Service callback function
-typedef void (*heartRateServiceCB_t)(uint8 event);
-
+  
 /*********************************************************************
  * MACROS
  */
@@ -126,32 +97,41 @@ typedef void (*heartRateServiceCB_t)(uint8 event);
  * Profile Callbacks
  */
 
+// Callback when a characteristic value has changed
+typedef void (*simpleProfileChange_t)( uint8 paramID );
+
+typedef struct
+{
+  simpleProfileChange_t        pfnSimpleProfileChange;  // Called when characteristic value changes
+} simpleProfileCBs_t;
+
+    
 
 /*********************************************************************
  * API FUNCTIONS 
  */
 
+
 /*
- * HeartRate_AddService- Initializes the Heart Rate service by registering
+ * SimpleProfile_AddService- Initializes the Simple GATT Profile service by registering
  *          GATT attributes with the GATT server.
  *
  * @param   services - services to add. This is a bit map and can
  *                     contain more than one service.
  */
 
-extern bStatus_t HeartRate_AddService(uint32 services);
+extern bStatus_t SimpleProfile_AddService( uint32 services );
 
 /*
- * HeartRate_Register - Register a callback function with the
- *          Heart Rate Service
+ * SimpleProfile_RegisterAppCBs - Registers the application callback function.
+ *                    Only call this function once.
  *
- * @param   pfnServiceCB - Callback function.
+ *    appCallbacks - pointer to application callbacks.
  */
-
-extern void HeartRate_Register(heartRateServiceCB_t pfnServiceCB);
+extern bStatus_t SimpleProfile_RegisterAppCBs( simpleProfileCBs_t *appCallbacks );
 
 /*
- * HeartRate_SetParameter - Set a Heart Rate parameter.
+ * SimpleProfile_SetParameter - Set a Simple GATT Profile parameter.
  *
  *    param - Profile parameter ID
  *    len - length of data to right
@@ -160,10 +140,10 @@ extern void HeartRate_Register(heartRateServiceCB_t pfnServiceCB);
  *          data type (example: data type of uint16 will be cast to 
  *          uint16 pointer).
  */
-extern bStatus_t HeartRate_SetParameter(uint8 param, uint8 len, void *value);
+extern bStatus_t SimpleProfile_SetParameter( uint8 param, uint8 len, void *value );
   
 /*
- * HeartRate_GetParameter - Get a Heart Rate parameter.
+ * SimpleProfile_GetParameter - Get a Simple GATT Profile parameter.
  *
  *    param - Profile parameter ID
  *    value - pointer to data to write.  This is dependent on
@@ -171,21 +151,7 @@ extern bStatus_t HeartRate_SetParameter(uint8 param, uint8 len, void *value);
  *          data type (example: data type of uint16 will be cast to 
  *          uint16 pointer).
  */
-extern bStatus_t HeartRate_GetParameter(uint8 param, void *value);
-
-/*********************************************************************
- * @fn          HeartRate_MeasNotify
- *
- * @brief       Send a notification containing a heart rate
- *              measurement.
- *
- * @param       connHandle - connection handle
- * @param       pNoti - pointer to notification structure
- *
- * @return      Success or Failure
- */
-extern bStatus_t HeartRate_MeasNotify(uint16 connHandle,
-                                      attHandleValueNoti_t *pNoti);
+extern bStatus_t SimpleProfile_GetParameter( uint8 param, void *value );
 
 
 /*********************************************************************
@@ -195,4 +161,4 @@ extern bStatus_t HeartRate_MeasNotify(uint16 connHandle,
 }
 #endif
 
-#endif /* HEARTRATESERVICE_H */
+#endif /* SIMPLEGATTPROFILE_H */
