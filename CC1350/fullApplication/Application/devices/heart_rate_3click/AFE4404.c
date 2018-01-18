@@ -156,3 +156,10 @@ long get_RED_data(){
 long get_IR_data(){
   return hr3_get_IR_data();
 }
+
+void TurnONOFF(bool turn){
+  if(turn)
+    hr3_set_led_currents( 20, 0, 0 );
+  else
+    hr3_set_led_currents(0, 0, 0);
+}

@@ -14,7 +14,8 @@
 	void AFE_CLK_Init(void);
 	void AFE_Reg_Write (int reg_address, unsigned long data);
 	long AFE_Reg_Read(int reg_address);
-	long get_GR_data();
-	long get_RED_data();
-	long get_IR_data();
+	long get_GR_data(void);
+	long get_RED_data(void);
+	long get_IR_data(void);
+	void TurnONOFF(bool turn);
 #endif

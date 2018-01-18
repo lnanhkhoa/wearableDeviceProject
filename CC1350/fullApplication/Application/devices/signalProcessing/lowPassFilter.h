@@ -12,11 +12,12 @@
 //              ------------
 //               z - 0.9875
 //        - Equation implement
-//               y(n+1) = 0.9875*y(n)+0.01249
+//        y(n+1) = 0.9875*y(n)+0.01249
 //////////////////////////////////////////////////////////
-#include "lowPassFilter.h"
 
-float LowPass_filter(float signalIn, float signalOut){
-  signalOut = 0.9875*signalOut + 0.01249*signalIn;
-  return signalOut;
-}
+#ifndef LOWPASSFILTER_H_
+#define LOWPASSFILTER_H_
+
+float LowPass_filter(float signalIn,float signalOut);
+
+#endif
