@@ -31,7 +31,10 @@ extern "C"
 #define WHITE 1
 #define INVERSE 2
 
-
+// Max voltage (mV)
+#define BATT_MAX_VOLTAGE            3800
+#define BATT_MIN_VOLTAGE            2500
+   
 #define NUM_SUM_GREEN 20
 #define NUM_AVERAGE_GREEN 30
 #define NUM_TIME 20

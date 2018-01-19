@@ -3,6 +3,14 @@
  */
 
 #include <xdc/std.h>
+#include <xdc/runtime/System.h>
+
+#include <ti/drivers/Power.h>
+#include <ti/drivers/power/PowerCC26XX.h>
+#include <ti/devices/DeviceFamily.h>
+#include DeviceFamily_constructPath(driverlib/aon_batmon.h)
+#include DeviceFamily_constructPath(driverlib/trng.h)
+
 #include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -51,8 +59,8 @@ Clock_Struct mainClockStruct;
 Clock_Handle mainClockHandle;
 Clock_Struct checkStateClockStruct;
 Clock_Handle checkStateClockHandle;
- Clock_Struct measureClockStruct;
- static Clock_Handle measureClockHandle;
+Clock_Struct measureClockStruct;
+static Clock_Handle measureClockHandle;
 
 Event_Struct operationEvent;
 Event_Handle operationEventHandle;
@@ -108,7 +116,7 @@ const uint8_t spO2LUT[43] = { 100,100,100,100,99,99,99,99,99,99,98,98,98,98,
                               98,97,97,97,97,97,97,96,96,96,96,96,96,95,95,
                               95,95,95,95,94,94,94,94,94,93,93,93,93,93
 };
-uint16_t heartRateNumber = 0;
+uint16_t heartRateNumber = 960;
 uint8_t spO2Number = 0;
 float redACValueSqSum = 0;
 float irACValueSqSum = 0;
@@ -150,6 +158,34 @@ void gpioButtonFxn1(uint_least8_t index){
   GPIO_toggle(Board_GPIO_LED1);
 }
 
+
+uint16_t battMaxLevel = BATT_MAX_VOLTAGE;
+static uint8_t battMeasure(void)
+{
+  static uint32_t percent;
+  // Read the battery voltage (V), only the first 12 bits
+  percent = AONBatMonBatteryVoltageGet();
+  // Convert to from V to mV to avoid fractions.
+  // Fractional part is in the lower 8 bits thus converting is done as follows:
+  // (1/256)/(1/1000) = 1000/256 = 125/32
+  // This is done most effectively by multiplying by 125 and then shifting
+  // 5 bits to the right.
+  percent = (percent * 125) >> 5;
+  // Convert to percentage of maximum voltage.
+  percent = ((percent* 100) / battMaxLevel);
+  return percent;
+}
+
+void Batt_MeasLevel(void)
+{
+  uint16_t level;
+  level = battMeasure();
+  if(level >=0 && level <=100){
+    // Update level
+    elementHead.batteryLevel = (uint8_t)(level & 0x00FF);
+  }
+}
+
 void clock_main(){
   int hour, min, sec;
   if(updateClock){
@@ -175,7 +211,7 @@ void heart_show(uint16_t rate){
   if(_rate != rate){
     _rate = rate;
   }
-  WDsDisplay__Heartrate_number(600);
+  WDsDisplay__Heartrate_number(_rate);
   eventChange.body = true;
 }
 
@@ -217,21 +253,18 @@ uint16_t pedometer_measurement(void){
 }
 
 void pedometer_main(void){
-  // static uint16_t steps = 100;
+  static uint16_t steps = 100;
   uint16_t _steps = pedometer_measurement();
-  pedometer_show(_steps);
-
-  // if(steps != _steps){
-  //   steps = _steps;
-  //   pedometer_show(_steps);
-  //   Clock_stop(countSleepClockHandle);
-  // }else{
-  //   pedometer_show(steps);
-    if(!enableSleep){
-      enableSleep = true;
-      Clock_start(countSleepClockHandle);
-    }
-  // }
+  if(steps != _steps){
+    steps = _steps;
+    Clock_stop(countSleepClockHandle);
+    enableSleep = false;
+  }
+  pedometer_show(steps);
+  if(!enableSleep){
+    enableSleep = true;
+    Clock_start(countSleepClockHandle);
+  }  
 }
 
 void HienThi_init(void){
@@ -240,7 +273,6 @@ void HienThi_init(void){
   WDsDisplay__display();
   delay_mma9553();
 }
-
 
 void display_head(void){
   WDsDisplay__Clear_head();
@@ -446,7 +478,7 @@ void mainTaskStructFunction(UArg arg0, UArg arg1){
     HienThi_init();
     elementHead.bleIcon = false;
     strcpy( elementHead.text, "MEMSTECH");
-    elementHead.batteryLevel = 90; // get_BatteryPercent();
+    Batt_MeasLevel();
   }
   {
     pedometer_init();
@@ -491,6 +523,8 @@ void countSleepClockStructFunction(UArg arg0, UArg arg1){
 void checkStateClockFunction(){
     updateClock = true;
     Clock_setSecond();
+
+    Batt_MeasLevel();
 }
 void mainClockTaskStructFunction(UArg arg0, UArg arg1){
   Event_post(operationEventHandle, EVENT_UPDATE_OLED);
@@ -572,7 +606,7 @@ void wearableDevice_init(){
   countSleepClockHandle = Clock_handle(&countSleepClockStruct);
 
   clkParams.period = 100000;
-  Clock_construct(&checkStateClockStruct, (Clock_FuncPtr)checkStateClockFunction, 4, &clkParams);
+  Clock_construct(&checkStateClockStruct, (Clock_FuncPtr)checkStateClockFunction, 1, &clkParams);
   checkStateClockHandle = Clock_handle(&checkStateClockStruct);
 }
 
