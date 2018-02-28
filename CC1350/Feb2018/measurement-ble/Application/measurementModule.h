@@ -16,14 +16,15 @@ extern "C"
 #define SPEED_UPDATE_NEW_VALUE 3  // 4 speed level 1 - 2 - 3 - 4
 
 
-void measurementInit();
-void measurementTask();
+void HR_measurementInit();
+void HR_measurementTask();
+void HR_getRawData();
+void HR_filterModule();
+void HR_calc();
 
-void getRawData();
-void filterModule();
-void calc();
-void getRealData(uint16_t *heartRateNumber);
-void TurnONOFF_HRModule(bool turn);
+uint8_t HR_getRealData();
+void HR_TurnONOFF_HRModule(bool turn);
+
 
 #ifdef __cplusplus
 }

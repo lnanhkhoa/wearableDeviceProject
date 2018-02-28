@@ -141,7 +141,7 @@
 // How often to perform periodic event (in msec)
 #define SBP_PERIODIC_EVT_PERIOD               5000
 
-#define SBP_MEASUREMENT_EVT_PERIOD            1000
+#define SBP_MEASUREMENT_EVT_PERIOD            10
 
 // Type of Display to open
 #if !defined(Display_DISABLE_ALL)
@@ -258,10 +258,10 @@ static uint8_t scanRspData[] =
   'i',
   'p',
   'h',
-  'e',
-  'r',
+  'o',
   'a',
-  'l',
+  'n',
+  'g',
 
   // connection interval range
   0x05,   // length of this data
@@ -446,9 +446,6 @@ static void SimpleBLEPeripheral_init(void)
 
   // Create an RTOS queue for message from profile to be sent to app.
   appMsgQueue = Util_constructQueue(&appMsg);
-  
-
-  // measurementInit();
 
   // Create one-shot clocks for internal periodic events.
   Util_constructClock(&periodicClock, SimpleBLEPeripheral_clockHandler, SBP_PERIODIC_EVT_PERIOD, 0, false, SBP_PERIODIC_EVT);
@@ -585,6 +582,8 @@ static void SimpleBLEPeripheral_init(void)
 
   HCI_LE_ReadMaxDataLenCmd();
 
+  HR_measurementInit();
+
 #if defined FEATURE_OAD
 #if defined (HAL_IMAGE_A)
   Display_print0(dispHandle, 0, 0, "BLE Peripheral A");
@@ -688,7 +687,7 @@ static void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1)
       Util_startClock(&measurementClock);
 
       // Perform periodic application task
-      measurementTask();
+      HR_measurementTask();
     }
 
 #ifdef FEATURE_OAD
