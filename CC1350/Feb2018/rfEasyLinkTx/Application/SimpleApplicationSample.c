@@ -88,6 +88,12 @@
 #include "board_key.h"
 #include "board.h"
 
+// Hardware Interrupt 
+#include <ti/drivers/GPIO.h>
+#include <ti/drivers/I2C.h>
+#include <ti/drivers/i2c/I2CCC26XX.h>
+
+#include "wearableDevice.h"
 #include "measurementModule.h"
 #include "SimpleApplication.h"
 
@@ -140,8 +146,10 @@
 
 // How often to perform periodic event (in msec)
 #define SBP_PERIODIC_EVT_PERIOD               5000
-
 #define SBP_MEASUREMENT_EVT_PERIOD            10
+#define WEAR_UPDATEOLED_EVT_PERIOD            200
+#define WEAR_SLEEPMODE_EVT_PERIOD             5000
+#define WEAR_BIGTIME_EVT_PERIOD               1000
 
 // Type of Display to open
 #if !defined(Display_DISABLE_ALL)
@@ -185,6 +193,9 @@
 #define SBP_PERIODIC_EVT                      0x0004
 #define SBP_CONN_EVT_END_EVT                  0x0008
 #define SBP_MEASUREMENT_EVT                   0x0010
+#define WEAR_UPDATEOLED_EVT                   0x0020
+#define WEAR_SLEEPMODE_EVT                    0x0040
+#define WEAR_BIGTIME_EVT                      0x0080
 
 /*********************************************************************
  * TYPEDEFS
@@ -215,6 +226,9 @@ static ICall_Semaphore sem;
 
 // Clock instances for internal periodic events.
 static Clock_Struct periodicClock;
+static Clock_Struct bigtimeClock;
+static Clock_Struct wearableDeviceUpdateOledClock;
+static Clock_Struct wearableDeviceSleepModeClock;
 static Clock_Struct measurementClock;
 
 // Queue object used for app messages
@@ -228,7 +242,12 @@ static Queue_Handle hOadQ;
 #endif //FEATURE_OAD
 
 // events flag for internal application events.
-static uint16_t events;
+static uint16_t events = 0;
+
+I2C_Handle i2c;
+I2C_Params i2cParams;
+I2C_Transaction i2cTransaction;
+
 
 // Task configuration
 Task_Struct sbpTask;
@@ -258,10 +277,10 @@ static uint8_t scanRspData[] =
   'i',
   'p',
   'h',
-  'o',
+  'e',
+  'r',
   'a',
-  'n',
-  'g',
+  'l',
 
   // connection interval range
   0x05,   // length of this data
@@ -342,6 +361,8 @@ void SimpleBLEPeripheral_processOadWriteCB(uint8_t event, uint16_t connHandle,
                                            uint8_t *pData);
 #endif //FEATURE_OAD
 
+static void SimpleBLEPeripheral_GPIOInterrupt(void);
+static void SimpleBLEPeripheral_startUtilClock(void);
 
 /*********************************************************************
  * PROFILE CALLBACKS
@@ -401,6 +422,26 @@ void SimpleBLEPeripheral_createTask(void)
   Task_construct(&sbpTask, SimpleBLEPeripheral_taskFxn, &taskParams, NULL);
 }
 
+
+static void SimpleBLEPeripheral_startUtilClock(void){
+  Util_startClock(&bigtimeClock);
+  Util_startClock(&wearableDeviceUpdateOledClock);
+  // Util_startClock(&wearableDeviceSleepModeClock);
+  Util_startClock(&measurementClock);
+}
+
+extern bool stateDisplay;
+static void SimpleBLEPeripheral_GPIOInterrupt(void){
+  gpioButtonFxn0();
+  if(!wearableDevice_ResetSleepMode()){
+    // Util_startClock(&wearableDeviceSleepModeClock);
+  }
+  if(stateDisplay == Display_OFF){
+    Util_startClock(&wearableDeviceUpdateOledClock);
+  }
+
+}
+
 /*********************************************************************
  * @fn      SimpleBLEPeripheral_init
  *
@@ -446,10 +487,13 @@ static void SimpleBLEPeripheral_init(void)
 
   // Create an RTOS queue for message from profile to be sent to app.
   appMsgQueue = Util_constructQueue(&appMsg);
-
+  
   // Create one-shot clocks for internal periodic events.
-  Util_constructClock(&periodicClock, SimpleBLEPeripheral_clockHandler, SBP_PERIODIC_EVT_PERIOD, 0, false, SBP_PERIODIC_EVT);
-  Util_constructClock(&measurementClock, SimpleBLEPeripheral_clockHandler, SBP_MEASUREMENT_EVT_PERIOD, 0, true, SBP_MEASUREMENT_EVT);
+  Util_constructClock(&wearableDeviceUpdateOledClock, SimpleBLEPeripheral_clockHandler, WEAR_UPDATEOLED_EVT_PERIOD, 0, false, WEAR_UPDATEOLED_EVT);
+  Util_constructClock(&bigtimeClock, SimpleBLEPeripheral_clockHandler, WEAR_BIGTIME_EVT_PERIOD, 0, true, WEAR_BIGTIME_EVT);
+  // Util_constructClock(&wearableDeviceSleepModeClock, SimpleBLEPeripheral_clockHandler, WEAR_SLEEPMODE_EVT_PERIOD, 0, false, WEAR_SLEEPMODE_EVT);
+  // Util_constructClock(&periodicClock, SimpleBLEPeripheral_clockHandler, SBP_PERIODIC_EVT_PERIOD, 0, false, SBP_PERIODIC_EVT);
+  Util_constructClock(&measurementClock, SimpleBLEPeripheral_clockHandler, SBP_MEASUREMENT_EVT_PERIOD, 0, false, SBP_MEASUREMENT_EVT);
 
   dispHandle = Display_open(SBP_DISPLAY_TYPE, NULL);
 
@@ -582,8 +626,6 @@ static void SimpleBLEPeripheral_init(void)
 
   HCI_LE_ReadMaxDataLenCmd();
 
-  HR_measurementInit();
-
 #if defined FEATURE_OAD
 #if defined (HAL_IMAGE_A)
   Display_print0(dispHandle, 0, 0, "BLE Peripheral A");
@@ -593,6 +635,19 @@ static void SimpleBLEPeripheral_init(void)
 #else
   Display_print0(dispHandle, 0, 0, "BLE Peripheral");
 #endif // FEATURE_OAD
+  {
+    GPIO_init();
+    GPIO_PinConfig pinConfig = Board_GPIO_BUTTON0 | GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_FALLING;
+    GPIO_setConfig(Board_GPIO_BUTTON0, pinConfig);
+    GPIO_setCallback(Board_GPIO_BUTTON0, SimpleBLEPeripheral_GPIOInterrupt);
+    GPIO_enableInt(Board_GPIO_BUTTON0);
+
+    wearableDevice_init();
+    HR_measurementInit();
+  }
+  SimpleBLEPeripheral_startUtilClock();
+
+
 }
 
 /*********************************************************************
@@ -670,14 +725,40 @@ static void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1)
       }
     }
 
-    if (events & SBP_PERIODIC_EVT)
+    // if (events & SBP_PERIODIC_EVT)
+    // {
+    //   events &= ~SBP_PERIODIC_EVT;
+
+    //   Util_startClock(&periodicClock);
+
+    //   // Perform periodic application task
+    //   SimpleBLEPeripheral_performPeriodicTask();
+    // }
+
+    if (events & WEAR_UPDATEOLED_EVT)
     {
-      events &= ~SBP_PERIODIC_EVT;
+      events &= ~WEAR_UPDATEOLED_EVT;
 
-      Util_startClock(&periodicClock);
+      Util_startClock(&wearableDeviceUpdateOledClock);
 
+      if(!wearableDevice_ResetSleepMode()){
+        // Util_startClock(&wearableDeviceSleepModeClock);
+      }
       // Perform periodic application task
-      SimpleBLEPeripheral_performPeriodicTask();
+      wearableDevice_UpdateOLED();
+    }
+
+    if (events & WEAR_BIGTIME_EVT)
+    {
+      events &= ~WEAR_BIGTIME_EVT;
+
+      Util_startClock(&bigtimeClock);
+
+      // if(!wearableDevice_ResetSleepMode()){
+      //   Util_startClock(&wearableDeviceSleepModeClock);
+      // }
+      // Perform periodic application task
+      wearableDevice_BigTime();
     }
 
     if (events & SBP_MEASUREMENT_EVT)
@@ -688,6 +769,15 @@ static void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1)
 
       // Perform periodic application task
       HR_measurementTask();
+    }
+
+    if (events & WEAR_SLEEPMODE_EVT)
+    {
+      events &= ~WEAR_SLEEPMODE_EVT;
+
+      // wearableDevice_SleepMode();
+      // Util_stopClock(&wearableDeviceUpdateOledClock);
+      // Util_stopClock(&wearableDeviceSleepModeClock);
     }
 
 #ifdef FEATURE_OAD
@@ -1005,7 +1095,7 @@ static void SimpleBLEPeripheral_processStateChangeEvt(gaprole_States_t newState)
         uint8_t numActive = 0;
 
         Util_startClock(&periodicClock);
-
+        wearableDevice_stateBLE(true); // TURN ON ICON BLE
         numActive = linkDB_NumActive();
 
         // Use numActive to determine the connection handle of the last
@@ -1058,7 +1148,7 @@ static void SimpleBLEPeripheral_processStateChangeEvt(gaprole_States_t newState)
       SimpleBLEPeripheral_freeAttRsp(bleNotConnected);
 
       Display_print0(dispHandle, 2, 0, "Disconnected");
-
+      wearableDevice_stateBLE(false); // TURN OFF ICON BLE
       // Clear remaining lines
       Display_clearLines(dispHandle, 3, 5);
       break;
@@ -1117,23 +1207,21 @@ static void SimpleBLEPeripheral_charValueChangeCB(uint8_t paramID)
  *
  * @return  None.
  */
+extern uint8 simpleProfileChar1[SIMPLEPROFILE_CHAR1_LEN];
 static void SimpleBLEPeripheral_processCharValueChangeEvt(uint8_t paramID)
 {
 #ifndef FEATURE_OAD_ONCHIP
   uint8_t newValue;
-
   switch(paramID)
   {
-    case SIMPLEPROFILE_CHAR1:
-      SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR1, &newValue);
-
-      Display_print1(dispHandle, 4, 0, "Char 1: %d", (uint16_t)newValue);
+    case SIMPLEPROFILE_CHAR1:       
+      // SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR1, newDateTime);
+      // memcpy(newDateTime, newDateTime2, 7);
+      wearableDevice_updateTime(simpleProfileChar1);
       break;
 
     case SIMPLEPROFILE_CHAR3:
       SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR3, &newValue);
-
-      Display_print1(dispHandle, 4, 0, "Char 3: %d", (uint16_t)newValue);
       break;
 
     default:
