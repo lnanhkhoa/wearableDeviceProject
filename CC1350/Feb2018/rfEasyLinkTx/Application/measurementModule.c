@@ -55,7 +55,7 @@ static long dataLedGreen,dataLedGreenDCRemove,dataLedGreenLPF,dataLedGreenKalman
 static long dataLedRed;
 static long dataLedIR;
 static long dataSum;
-static uint32_t time;
+static uint32_t time, timeTest, timeDif;
 static long signalGreenArray[NUM_SUM_GREEN], signalSumGreenArray[NUM_AVERAGE_GREEN];
 static long timeDiff = 0;
 const uint8_t spO2LUT[43] = {100,100,100,100,99,99,99,99,99,99,98,98,98,98,
@@ -71,53 +71,53 @@ bool pulseUp = false, pulseDw = true;
 bool hrStatus = true;
 /////////////////////////////////////////
 
-// static char *long_to_string_convert_for_test(long dataLong)
-// {
-//     static char substring1[10] ,substring2[10] ;
-//     int xoamang = 0;
-//     for(xoamang = 0 ; xoamang < 10 ; xoamang ++){
-//         substring1[xoamang] = 0;
-//         substring2[xoamang] = 0;
-//     }
-//     int dem = 0;
-//     long dataLongTemp = dataLong;
-//     if(dataLongTemp<0){
-//         dem++;
-//         substring2[0] = '-';
-//         dataLongTemp = abs(dataLongTemp);
-//     }
-//     while(dataLongTemp){
-//         substring1[dem] = dataLongTemp %10+48;
-//         dem++;
-//         dataLongTemp /=10;
-//     }
-//     doDai = dem;
-//     while(dem){
-//         if(dataLong >= 0){
-//             substring2[dem-1] = substring1[doDai - dem];
-//         }else{
-//             substring2[dem-1] = substring1[doDai - dem+1];
-//             if(dem == 2 ) break;
-//         }
-//         dem--;
-//     }
-//     return substring2;
-// }
+ static char *long_to_string_convert_for_test(long dataLong)
+ {
+     static char substring1[10] ,substring2[10] ;
+     int xoamang = 0;
+     for(xoamang = 0 ; xoamang < 10 ; xoamang ++){
+         substring1[xoamang] = 0;
+         substring2[xoamang] = 0;
+     }
+     int dem = 0;
+     long dataLongTemp = dataLong;
+     if(dataLongTemp<0){
+         dem++;
+         substring2[0] = '-';
+         dataLongTemp = abs(dataLongTemp);
+     }
+     while(dataLongTemp){
+         substring1[dem] = dataLongTemp %10+48;
+         dem++;
+         dataLongTemp /=10;
+     }
+     doDai = dem;
+     while(dem){
+         if(dataLong >= 0){
+             substring2[dem-1] = substring1[doDai - dem];
+         }else{
+             substring2[dem-1] = substring1[doDai - dem+1];
+             if(dem == 2 ) break;
+         }
+         dem--;
+     }
+     return substring2;
+ }
 
-// void UART_init_setup(){
-//     //-----------------------UART BEGIN------------------//
+ void UART_init_setup(){
+     //-----------------------UART BEGIN------------------//
 //     UART_Params_init(&uartParams);
 //     uartParams.writeDataMode = UART_DATA_BINARY;
 //     uartParams.readDataMode = UART_DATA_BINARY;
 //     uartParams.readReturnMode = UART_RETURN_FULL;
 //     uartParams.readEcho = UART_ECHO_OFF;
-//     uartParams.baudRate = 115200;
+//     uartParams.baudRate = 250000;
 //     uart = UART_open(Board_UART0, &uartParams);
 //     if (uart == NULL) {
-
+//
 //     }
-//     //-----------------------UART END--------------------//
-// }
+     //-----------------------UART END--------------------//
+ }
 
 void i2cStartup(){
     I2C_init();
@@ -146,7 +146,7 @@ void HR_measurementInit(){
     AFE_Init();
     heartrate_3_init();
     // Board_initUART();
-    // UART_init_setup();
+    UART_init_setup();
     SimpleKalmanFilter(2, 2, 0.0008);
     for(count = 0 ; count < NUM_TIME  ; count++){
         timeArray[count] = 0;
@@ -163,13 +163,17 @@ void HR_measurementTask(){
     HR_getRawData();
     HR_calc();
     HR_filterModule();
-    HR_TurnONOFF_HRModule(true);
+    uint32_t i=0;
+    // for(i=0;i<1000000;i++);
 }
 
 void HR_getRawData(){
     dataLedGreen = get_GR_data();
     dataLedRed = get_RED_data();
     dataLedIR = get_IR_data();
+    // dataLedGreen = 10;
+    // dataLedRed = 10;
+    // dataLedIR = 10;
 }
 
 void HR_filterModule(){
@@ -180,6 +184,8 @@ void HR_filterModule(){
 }
 
 void HR_calc(){
+    timeDif = Clock_getTicks() - timeTest;
+    timeTest = Clock_getTicks();
     dataSum = dataLedGreen + dataLedRed + dataLedIR;
     //Calculator Sum X Green Value
     for(count = 0 ; count < NUM_SUM_GREEN - 1 ; count++){
@@ -236,7 +242,7 @@ void HR_calc(){
                 timeArray[count] = timeArray[count+1];
             }
             timeArray[NUM_TIME-1] = time;
-            averageTime = timeSum/timeSavedCount;
+            averageTime = (float)timeSum/timeSavedCount;
             for(count = 0 ; count < NUM_TIME - 1 ; count++){
                 if(timeArray[count+1] > timeArray[count] && timeArray[count] != 0){
                     timeDiff = timeArray[count+1] - timeArray[count];
@@ -286,15 +292,13 @@ void HR_calc(){
             pulseDw = true;
         }
     }
-    uint32_t i = 0 ;
-    for(i = 0 ; i < 1000 ; i++){
-
-    }
     //////////////////Show data UART
-    // UART_write(uart, long_to_string_convert_for_test(averageGreenValue), doDai);
-    // UART_write(uart, "  ", 2);
-    // UART_write(uart, long_to_string_convert_for_test(greenSumXValue), doDai);
-    // UART_write(uart, endLine, sizeof(endLine)-1);
+//     UART_write(uart, long_to_string_convert_for_test(averageGreenValue), doDai);
+//     UART_write(uart, "  ", 2);dataSum
+     // UART_write(uart, long_to_string_convert_for_test(dataSum), doDai);
+     // UART_write(uart, "  ", 2);
+//     UART_write(uart, long_to_string_convert_for_test(greenSumXValue), doDai);
+     // UART_write(uart, endLine, sizeof(endLine)-1);
 }
 
 uint8_t HR_getRealData(){

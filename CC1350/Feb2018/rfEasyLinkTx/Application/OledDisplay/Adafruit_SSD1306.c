@@ -420,7 +420,7 @@ void AdafruitSSD1306_display(void) {
      for (i=0; i<(SSD1306_LCDWIDTH*SSD1306_LCDHEIGHT/8); i++) {
       // send a bunch of data in one xmission
 
-      I2c_WriteRegister(_i2caddr, 0x40, &buffer[i], 16);
+      I2c_WriteRegister(_i2caddr, 0x40, (buffer +i), 16);
      // I2c_WriteRegister(_i2caddr, 0x40, &buffer[0], (SSD1306_LCDWIDTH*SSD1306_LCDHEIGHT/8));
       i+=15;
      }

@@ -52,7 +52,7 @@
 #define AFE_DEC                     0x3d
 #define AFE_AVG_LED2_ALED2VAL       0x3f
 #define AFE_AVG_LED1_ALED1VAL       0x40
-#define AFE_ADDR 0x58
+#define AFE_ADDR                    0x58
 
 #define I2C_write I2c_WriteRegister
 #define I2C_read I2c_ReadRegister

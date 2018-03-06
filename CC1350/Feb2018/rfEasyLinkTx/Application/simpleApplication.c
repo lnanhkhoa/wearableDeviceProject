@@ -177,6 +177,19 @@ static void SimpleBLEPeripheral_GPIOInterrupt(void){
   }
 }
 
+
+void Measurement_createTask(void){
+  while(1){
+    Semaphore_pend(txMeasSem, BIOS_WAIT_FOREVER);
+    HR_measurementTask();
+    // Clock_start(measureClockHandle);
+  }
+
+}
+
+
+
+
 void SimpleBLEPeripheral_createTask(void){
   
   // GPIO_init();
@@ -188,17 +201,17 @@ void SimpleBLEPeripheral_createTask(void){
   
   wearableDevice_init();
   HR_measurementInit();
-
-
+  
+  Clock_start(measureClockHandle);
   while(true){
     /* Wait for event */
     uint32_t events = Event_pend(operationEventHandle, 0, EVENT_ALL, BIOS_WAIT_FOREVER);
     
     if(events & WEAR_UPDATEOLED_EVT){
       wearableDevice_UpdateOLED();
-
       if(!wearableDevice_ResetSleepMode()){
         Clock_start(countSleepClockHandle);
+        wearableDevice_SetupSleepMode();
       }
     }
 
@@ -218,21 +231,15 @@ void SimpleBLEPeripheral_createTask(void){
       HR_TurnONOFF_HRModule(enableMeasurement);
     }
 
-    if(events & SBP_MEASUREMENT_EVT)
-    {
-      HR_measurementTask();
-    }
+//    if(events & SBP_MEASUREMENT_EVT)
+//    {
+//      if(enableMeasurement)
+//        HR_measurementTask();
+//    }
   }
-
 }
 
 
-// void Measurement_createTask(void){
-//   while(1){
-//     Semaphore_pend(txMeasSem, BIOS_WAIT_FOREVER);
-//     HR_measurementTask();
-//   }
-// }
 
 
 
@@ -249,8 +256,9 @@ void bigtimeClockStructFunction(UArg arg0, UArg arg1){
 }
 
 void measureClockTaskStructFunction(UArg arg0, UArg arg1){
-  // Semaphore_post(txMeasSem);
-  Event_post(operationEventHandle, SBP_MEASUREMENT_EVT);
+  // Clock_stop(measureClockHandle);
+  Semaphore_post(txMeasSem);
+  // Event_post(operationEventHandle, SBP_MEASUREMENT_EVT);
 }
 
 
@@ -286,10 +294,10 @@ void simpleApplication_init(){
   Task_construct(&mainTaskStruct, SimpleBLEPeripheral_createTask, &mainTaskParams, NULL);
   
   // /* Create Task */
-  // mainTaskParams.stackSize = MEAS_TACKSIZE;
-  // mainTaskParams.priority = MEAS_PRIORITY;
-  // mainTaskParams.stack = &measTaskStack;
-  // Task_construct(&measTaskStruct, Measurement_createTask, &mainTaskParams, NULL);
+  mainTaskParams.stackSize = MEAS_TACKSIZE;
+  mainTaskParams.priority = MEAS_PRIORITY;
+  mainTaskParams.stack = &measTaskStack;
+  Task_construct(&measTaskStruct, Measurement_createTask, &mainTaskParams, NULL);
 
   /* Create Clock */
   Clock_Params clkParams;
@@ -298,7 +306,7 @@ void simpleApplication_init(){
   
   clkParams.period = 20000;
   clkParams.startFlag = true;
-  Clock_construct(&mainClockStruct, (Clock_FuncPtr)mainClockTaskStructFunction, 1, &clkParams);
+  Clock_construct(&mainClockStruct, (Clock_FuncPtr)mainClockTaskStructFunction, 100, &clkParams);
   mainClockHandle = Clock_handle(&mainClockStruct);
 
   clkParams.period = 900000;
@@ -310,7 +318,7 @@ void simpleApplication_init(){
   Clock_construct(&bigtimeClockStruct, (Clock_FuncPtr)bigtimeClockStructFunction, 1, &clkParams);
   bigtimeClockHandle = Clock_handle(&bigtimeClockStruct);
 
-  clkParams.period = 100;
+  clkParams.period = 1000;
   clkParams.startFlag = false;
   Clock_construct(&measureClockStruct, (Clock_FuncPtr)measureClockTaskStructFunction, 1, &clkParams);
   measureClockHandle = Clock_handle(&measureClockStruct);

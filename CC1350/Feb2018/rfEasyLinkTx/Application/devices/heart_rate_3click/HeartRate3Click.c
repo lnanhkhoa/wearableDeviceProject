@@ -74,7 +74,7 @@ void heartrate_3_init(){
 /////////////////////////////////////////////////Modified - RED DATA////////////////////////////////////////////////////////
 /////////////////////////////////////////////////Modified - IR DATA/////////////////////////////////////////////////////////
 long get_GR_data(){
-  uint8_t dataLedGreenArray[3] = {0};
+  uint8_t dataLedGreenArray[3] = {0, 0, 0};
   I2C_read(AFE_ADDR, 0x2C, dataLedGreenArray, 3);
   long dataLongLed1 = 0;
   long old_data;
@@ -84,8 +84,8 @@ long get_GR_data(){
 }
 
 long get_RED_data(){
-  uint8_t dataLedRedArray[3] = {0};
-  I2C_read(AFE_ADDR,0x2C, dataLedRedArray,3);
+  uint8_t dataLedRedArray[3] = {0, 0, 0};
+  I2C_read(AFE_ADDR,0x2C, dataLedRedArray, 3);
   long dataLongLed1 = 0;
   long old_data;
   //show_bit_data(0);
@@ -94,8 +94,8 @@ long get_RED_data(){
 }
 
 long get_IR_data(){
-  uint8_t dataIRRedArray[3] = {0};
-  I2C_read(AFE_ADDR,0x2C, dataIRRedArray,3);
+  uint8_t dataIRRedArray[3] = {0, 0, 0};
+  I2C_read(AFE_ADDR, 0x2C, dataIRRedArray,3);
   long dataLongLed1 = 0;
   long old_data;
   //show_bit_data(0);

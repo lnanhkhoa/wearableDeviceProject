@@ -18,9 +18,11 @@
 #include <ti/drivers/i2c/I2CCC26XX.h>
 // #include <ti/drivers/UART.h>
 
-//#include <ti/devices/DeviceFamily.h>
-//#include DeviceFamily_constructPath(driverlib/aon_batmon.h)
-//#include DeviceFamily_constructPath(driverlib/trng.h)
+// #include <ti/devices/DeviceFamily.h>
+// #include DeviceFamily_constructPath(driverlib/aon_batmon.h)
+// #include DeviceFamily_constructPath(driverlib/trng.h)
+#include <driverlib/aon_batmon.h>
+#include <driverlib/trng.h>
 
 
 #include "bigtime/bigtime.h"
@@ -45,8 +47,6 @@ static void HienThi_TurnONOFFDisplay(bool turn);
 static void SpO2_Reset();
 static void checkStateClockFunction(void);
 
-
-
 typedef struct
 {
   bool head;
@@ -62,8 +62,8 @@ typedef struct {
 elementhead elementHead;
 eventchange eventChange;
 
-uint8_t modeMain = 0;
-bool  enableMeasurement = false;
+uint8_t modeMain = 1;
+bool  enableMeasurement = true;
 bool      enableSleep = false, 
       stateDisplay = Display_ON,
       updateClock = true;
@@ -98,9 +98,9 @@ void gpioButtonFxn0(void){
 
 static uint8_t battMeasure(void)
 {
-  static uint32_t percent = 0;
+  static uint32_t percent;
   // Read the battery voltage (V), only the first 12 bits
-  // percent = AONBatMonBatteryVoltageGet();
+  percent = AONBatMonBatteryVoltageGet();
   // Convert to from V to mV to avoid fractions.
   // Fractional part is in the lower 8 bits thus converting is done as follows:
   // (1/256)/(1/1000) = 1000/256 = 125/32
@@ -189,7 +189,7 @@ static void pedometer_main(void){
 }
 
 static void HienThi_init(void){
-  WDsDisplay__begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  WDsDisplay__begin( SSD1306_SWITCHCAPVCC, 0x3C);
   WDsDisplay__clearDisplay();
   WDsDisplay__display();
   delay_mma9553();
@@ -287,7 +287,7 @@ void wearableDevice_UpdateOLED(void){
 
 
 void wearableDevice_SleepMode(void){
-  if(stateDisplay == Display_ON) HienThi_TurnONOFFDisplay(false);
+  HienThi_TurnONOFFDisplay(false);
 }
 
 bool wearableDevice_ResetSleepMode(){
